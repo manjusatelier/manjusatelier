@@ -88,7 +88,7 @@ export default function BulkOrders() {
               </div>
               <div>
                 <p className="font-medium text-brown-dark">Business Hours</p>
-                <p className="text-brown/80">Mon-Fri, 9am - 6pm IST</p>
+                <p className="text-brown/80">8:00 AM – 10:00 PM, Daily</p>
               </div>
             </div>
           </div>

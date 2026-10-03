@@ -62,7 +62,7 @@ export default function Contact() {
             { icon: Mail, label: 'Email', value: 'help@manjusatelier.in' },
             { icon: MessageCircle, label: 'WhatsApp', value: '+91 93100 92966' },
             { icon: MapPin, label: 'Studio', value: '42 Artisan Lane, Ghaziabad, India' },
-            { icon: Clock, label: 'Hours', value: 'Mon–Sat, 10am – 7pm' },
+            { icon: Clock, label: 'Hours', value: '8:00 AM – 10:00 PM, Daily' },
           ].map((item) => (
             <div key={item.label} className="card-surface flex items-center gap-4 p-5">
               <span className="grid h-11 w-11 place-items-center rounded-full bg-beige/60 text-brown dark:bg-beige/10">
