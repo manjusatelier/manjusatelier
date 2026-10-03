@@ -41,6 +41,7 @@ export function Navbar() {
   const [desktopProfileOpen, setDesktopProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [notiOpen, setNotiOpen] = useState(false);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,6 +101,7 @@ export function Navbar() {
         setMegaOpen(false);
         setProfileOpen(false);
         setDesktopProfileOpen(false);
+        setNotiOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -269,12 +271,27 @@ export function Navbar() {
 
           {/* Notifications */}
           {user && (
-            <div className="group relative hidden md:block">
-              <IconButton label="Notifications" transparent={transparent}>
+            <div className="relative">
+              <IconButton 
+                label="Notifications" 
+                transparent={transparent}
+                onClick={() => {
+                  setNotiOpen(!notiOpen);
+                  setDesktopProfileOpen(false);
+                }}
+              >
                 <Bell size={20} />
                 {unreadCount > 0 && <Counter value={unreadCount} />}
               </IconButton>
-              <div className="invisible absolute right-0 top-full w-80 pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100 z-50">
+              
+              <AnimatePresence>
+                {notiOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-full w-80 pt-2 z-50"
+                  >
                 <div className="flex max-h-96 flex-col overflow-hidden rounded-2xl bg-white shadow-lift dark:bg-[#26201a]">
                   <div className="flex items-center justify-between border-b border-brown/10 p-3 dark:border-beige/10">
                     <h3 className="font-medium text-brown-dark dark:text-beige">Notifications</h3>
@@ -328,7 +345,9 @@ export function Navbar() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
+              )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -337,7 +356,10 @@ export function Navbar() {
             <IconButton 
               label="Account" 
               transparent={transparent} 
-              onClick={() => setDesktopProfileOpen(!desktopProfileOpen)}
+              onClick={() => {
+                setDesktopProfileOpen(!desktopProfileOpen);
+                setNotiOpen(false);
+              }}
             >
               <User size={20} />
             </IconButton>

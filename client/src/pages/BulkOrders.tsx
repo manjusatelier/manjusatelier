@@ -76,8 +76,8 @@ export default function BulkOrders() {
               </div>
               <div>
                 <p className="font-medium text-brown-dark">Call Us</p>
-                <a href="tel:+919876543210" className="text-brown/80 hover:text-gold transition-colors">
-                  +91 98765 43210
+                <a href="tel:+919310092966" className="text-brown/80 hover:text-gold transition-colors">
+                  +91 93100 92966
                 </a>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function BulkOrders() {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full rounded-lg border border-brown/20 px-4 py-2.5 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold"
-                    placeholder="+91 98765 43210"
+                    placeholder="+91 93100 92966"
                   />
                 </div>
                 <div className="space-y-2">

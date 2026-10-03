@@ -42,7 +42,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [newOrderPrompt, setNewOrderPrompt] = useState<{show: boolean, orderId: string | null}>({show: false, orderId: null});
+  const [newOrderId, setNewOrderId] = useState<string | null>(null);
   
   const socket = useSocket();
   usePageMeta({ title: "Admin — Manju's Atelier" });
@@ -67,7 +67,7 @@ export default function AdminLayout() {
     const onOrderUpdate = (data: any) => {
       fetchPendingCount();
       if (data.type === 'NEW_ORDER') {
-        setNewOrderPrompt({ show: true, orderId: data.orderId });
+        setNewOrderId(data.orderId);
       }
     };
 
@@ -207,7 +207,7 @@ export default function AdminLayout() {
 
       {/* New Order Prompt */}
       <AnimatePresence>
-        {newOrderPrompt.show && (
+        {newOrderId && (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -220,7 +220,7 @@ export default function AdminLayout() {
                 <h3 className="font-bold">New Order Arrived!</h3>
               </div>
               <button 
-                onClick={() => setNewOrderPrompt({ show: false, orderId: null })}
+                onClick={() => setNewOrderId(null)}
                 className="text-brown-dark/50 hover:text-brown-dark dark:text-beige/50 dark:hover:text-beige transition-colors"
               >
                 <X size={18} />
@@ -231,14 +231,14 @@ export default function AdminLayout() {
             </p>
             <div className="mt-2 flex justify-end gap-2">
               <button 
-                onClick={() => setNewOrderPrompt({ show: false, orderId: null })}
+                onClick={() => setNewOrderId(null)}
                 className="rounded-full px-4 py-2 text-xs font-medium text-brown-dark hover:bg-beige/50 dark:text-beige dark:hover:bg-beige/10 transition-colors"
               >
                 Dismiss
               </button>
               <button 
                 onClick={() => {
-                  setNewOrderPrompt({ show: false, orderId: null });
+                  setNewOrderId(null);
                   navigate('/admin/orders');
                 }}
                 className="rounded-full bg-red-500 px-4 py-2 text-xs font-medium text-white hover:bg-red-600 transition-colors"

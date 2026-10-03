@@ -32,13 +32,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Load cart from DB if logged in, otherwise from local storage
   useEffect(() => {
     if (user && user.cart && !syncedOnce) {
+      // Get DB items
       const dbItems = user.cart.map((c: { product: Product, quantity: number }) => ({
         product: c.product,
         quantity: c.quantity
       }));
-      setItems(dbItems);
+      
+      // Get Local items (guest cart)
+      let localItems: CartItem[] = [];
+      try {
+        const saved = localStorage.getItem('manjus_cart');
+        if (saved) localItems = JSON.parse(saved);
+      } catch (e) {}
+
+      // Merge local into DB
+      const mergedMap = new Map<string, CartItem>();
+      dbItems.forEach(item => mergedMap.set(item.product._id, item));
+      
+      localItems.forEach(item => {
+        if (mergedMap.has(item.product._id)) {
+           const existing = mergedMap.get(item.product._id)!;
+           existing.quantity = Math.min(existing.quantity + item.quantity, existing.product.stock);
+        } else {
+           mergedMap.set(item.product._id, item);
+        }
+      });
+      
+      const finalItems = Array.from(mergedMap.values());
+      setItems(finalItems);
       setSyncedOnce(true);
       setLoaded(true);
+      
+      // Sync merged cart to backend if we had local items
+      if (localItems.length > 0) {
+        api.post('/auth/cart/sync', { 
+          items: finalItems.map(i => ({ productId: i.product._id, quantity: i.quantity })) 
+        }).catch(console.error);
+      }
     } else if (!user) {
       setSyncedOnce(false);
     }

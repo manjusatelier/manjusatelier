@@ -144,7 +144,7 @@ export const getBulkOrderReplyTemplate = (name) => `
       <p style="color: #666666; line-height: 1.6;">For immediate assistance, please feel free to reach out to us:</p>
       <ul style="color: #666666; line-height: 1.6;">
         <li>Email: queries@manjusatelier.in</li>
-        <li>Phone: +91 98765 43210</li>
+        <li>Phone: +91 93100 92966</li>
       </ul>
       <p style="color: #666666; line-height: 1.6; margin-top: 20px;">We look forward to fulfilling your request!</p>
     </div>
