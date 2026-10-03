@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, ChevronDown } from 'lucide-react';
+import { Mail, Phone, MessageCircle, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { Reveal } from '@/components/ui/Reveal';
@@ -60,7 +60,7 @@ export default function Contact() {
         <Reveal className="space-y-4">
           {[
             { icon: Mail, label: 'Email', value: 'help@manjusatelier.in' },
-            { icon: Phone, label: 'Phone', value: '+91 93100 92966' },
+            { icon: MessageCircle, label: 'WhatsApp', value: '+91 93100 92966' },
             { icon: MapPin, label: 'Studio', value: '42 Artisan Lane, Bengaluru, India' },
             { icon: Clock, label: 'Hours', value: 'Mon–Sat, 10am – 7pm' },
           ].map((item) => (

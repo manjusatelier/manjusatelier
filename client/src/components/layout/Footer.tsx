@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 // import { useState } from 'react';
-import { Instagram, Facebook, Mail, MapPin, Phone } from 'lucide-react';
+import { Instagram, Facebook, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
 
 const XIcon = ({ size = 16 }: { size?: number }) => (
   <svg
@@ -144,9 +144,9 @@ export function Footer() {
             <span className="flex items-center gap-1.5">
               <MapPin size={14} /> Bengaluru, India
             </span>
-            <span className="flex items-center gap-1.5">
-              <Phone size={14} /> +91 93100 92966
-            </span>
+            <a href="https://wa.me/919310092966" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-gold transition-colors">
+              <MessageCircle size={14} /> +91 93100 92966
+            </a>
             <span className="flex items-center gap-1.5">
               <Mail size={14} /> help@manjusatelier.in
             </span>

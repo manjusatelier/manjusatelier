@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Mail, Phone, Building, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MessageCircle, Building, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function BulkOrders() {
@@ -72,11 +72,11 @@ export default function BulkOrders() {
 
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold">
-                <Phone size={24} />
+                <MessageCircle size={24} />
               </div>
               <div>
-                <p className="font-medium text-brown-dark">Call Us</p>
-                <a href="tel:+919310092966" className="text-brown/80 hover:text-gold transition-colors">
+                <p className="font-medium text-brown-dark">WhatsApp</p>
+                <a href="https://wa.me/919310092966" target="_blank" rel="noopener noreferrer" className="text-brown/80 hover:text-gold transition-colors">
                   +91 93100 92966
                 </a>
               </div>
