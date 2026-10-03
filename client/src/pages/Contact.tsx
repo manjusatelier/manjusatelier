@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Phone, MessageCircle, MapPin, Clock, ChevronDown } from 'lucide-react';
+import { Mail, MessageCircle, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { Reveal } from '@/components/ui/Reveal';

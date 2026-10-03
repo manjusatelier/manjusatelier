@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Mail, Phone, MessageCircle, Building, CheckCircle } from 'lucide-react';
+import { Mail, MessageCircle, Building, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function BulkOrders() {
