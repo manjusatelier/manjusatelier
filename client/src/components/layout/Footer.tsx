@@ -142,7 +142,7 @@ export function Footer() {
         <div className="container-x flex flex-col items-center justify-between gap-4 py-6 text-sm text-beige/60 md:flex-row">
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <MapPin size={14} /> Bengaluru, India
+              <MapPin size={14} /> Ghaziabad, India
             </span>
             <a href="https://wa.me/919310092966" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-gold transition-colors">
               <MessageCircle size={14} /> +91 93100 92966
