@@ -18,7 +18,20 @@ export default function OfflineReview() {
   });
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const selectedProduct = products.find(p => p._id === formData.productId);
+
+  const filteredProducts = products.filter(p => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      p.name?.toLowerCase().includes(q) ||
+      p.color?.toLowerCase().includes(q) ||
+      p.category?.name?.toLowerCase().includes(q) ||
+      (typeof p.category === 'string' && p.category.toLowerCase().includes(q)) ||
+      p.tags?.some((t: string) => t.toLowerCase().includes(q))
+    );
+  });
 
   useEffect(() => {
     async function fetchProducts() {
@@ -128,25 +141,42 @@ export default function OfflineReview() {
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute left-0 top-full z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-brown/20 bg-white shadow-lg">
-                      {products.map((p) => (
-                        <button
-                          key={p._id}
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, productId: p._id }));
-                            setDropdownOpen(false);
-                          }}
-                          className="flex w-full items-center gap-3 border-b border-brown/5 p-3 text-left transition-colors last:border-0 hover:bg-gold/10"
-                        >
-                          <img
-                            src={p.images?.[0] || '/placeholder.png'}
-                            alt={p.name}
-                            className="h-10 w-10 shrink-0 rounded object-cover"
-                          />
-                          <span className="truncate text-brown-dark">{p.name}</span>
-                        </button>
-                      ))}
+                    <div className="absolute left-0 top-full z-10 mt-1 flex max-h-60 w-full flex-col rounded-lg border border-brown/20 bg-white shadow-lg">
+                      <div className="sticky top-0 z-20 border-b border-brown/10 bg-white p-2">
+                        <input
+                          type="text"
+                          placeholder="Search products, colors, tags..."
+                          className="w-full rounded-md border border-brown/20 bg-beige/10 px-3 py-2 text-sm text-brown outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="overflow-y-auto">
+                        {filteredProducts.length > 0 ? (
+                          filteredProducts.map((p) => (
+                            <button
+                              key={p._id}
+                              type="button"
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, productId: p._id }));
+                                setDropdownOpen(false);
+                                setSearchQuery('');
+                              }}
+                              className="flex w-full items-center gap-3 border-b border-brown/5 p-3 text-left transition-colors last:border-0 hover:bg-gold/10"
+                            >
+                              <img
+                                src={p.images?.[0] || '/placeholder.png'}
+                                alt={p.name}
+                                className="h-10 w-10 shrink-0 rounded object-cover"
+                              />
+                              <span className="truncate text-brown-dark">{p.name}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-sm text-brown/60">No products found</div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
