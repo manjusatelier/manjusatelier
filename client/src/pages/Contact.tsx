@@ -13,7 +13,7 @@ const faqs = [
   { q: 'Do you take custom orders?', a: 'Absolutely. Use the contact form or the "Request Custom Design" button and we\u2019ll work with you to create something special.' },
   { q: 'How long does shipping take?', a: 'Ready-made pieces ship within 2-3 business days. Custom orders typically take 1-2 weeks depending on complexity.' },
   { q: 'What is your return / exchange policy?', a: 'Returns and exchanges must be initiated within 7 days post-delivery. We cannot accept any requests after this period. Items must be in original condition, and custom pieces are non-returnable.' },
-  { q: 'Which payment methods do you accept?', a: 'We accept all major cards, UPI, netbanking and wallets through our secure Razorpay checkout.' },
+  { q: 'Which payment methods do you accept?', a: 'Currently, we only accept manual UTR UPI payment verifications. We are working on integrating an automated payment gateway in the near future!' },
 ];
 
 export default function Contact() {
