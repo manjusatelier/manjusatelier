@@ -50,12 +50,18 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Product, rating, and name are required');
   }
 
+  let imageUrl = undefined;
+  if (req.file) {
+    imageUrl = req.file.path;
+  }
+
   const review = await Review.create({
     product: productId,
     user: new mongoose.Types.ObjectId(), // fake user ID for offline to bypass unique index
     name,
     rating,
     comment,
+    image: imageUrl,
     status: 'pending',
   });
   res.status(201).json({ success: true, review });

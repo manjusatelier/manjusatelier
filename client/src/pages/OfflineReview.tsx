@@ -19,6 +19,7 @@ export default function OfflineReview() {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const selectedProduct = products.find(p => p._id === formData.productId);
 
   const filteredProducts = products.filter(p => {
@@ -71,7 +72,20 @@ export default function OfflineReview() {
     setErrorMessage('');
 
     try {
-      await api.post('/reviews/offline', formData);
+      const payload = new FormData();
+      payload.append('productId', formData.productId);
+      payload.append('name', formData.name);
+      payload.append('rating', String(formData.rating));
+      payload.append('comment', formData.comment);
+      if (imageFile) {
+        payload.append('image', imageFile);
+      }
+
+      await api.post('/reviews/offline', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setStatus('success');
     } catch (error: any) {
       console.error('Review submission error:', error);
@@ -104,6 +118,7 @@ export default function OfflineReview() {
               onClick={() => {
                 setStatus('idle');
                 setFormData({ ...formData, comment: '', rating: 5, productId: '' });
+                setImageFile(null);
               }}
               variant="secondary"
             >
@@ -236,6 +251,22 @@ export default function OfflineReview() {
                 className="w-full resize-none rounded-lg border border-brown/20 px-4 py-3 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold"
                 placeholder="Tell us what you liked about it..."
               />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="image" className="text-sm font-medium text-brown-dark">
+                Upload a Photo (Optional)
+              </label>
+              <input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                className="w-full rounded-lg border border-brown/20 px-4 py-2.5 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold file:mr-4 file:rounded-full file:border-0 file:bg-gold/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gold hover:file:bg-gold/20"
+              />
+              {imageFile && (
+                <p className="text-xs text-brown/60">Selected: {imageFile.name}</p>
+              )}
             </div>
 
             {status === 'error' && (
