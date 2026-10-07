@@ -4,7 +4,6 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { protect, adminOnly } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
-import { protect, adminOnly } from '../middleware/auth.js';
 import { getStats, getCustomers, uploadImage, sendBroadcastEmail } from '../controllers/adminController.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
