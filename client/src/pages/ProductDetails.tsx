@@ -646,17 +646,13 @@ function ReviewsTab({
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await api.post<{ review: Review, warning?: string }>(
+      const { review } = await api.post<{ review: Review }>(
         `/products/${product._id}/reviews`,
         { rating, comment }
       );
-      if (res.warning) {
-        notify(res.warning, 'error');
-      } else {
-        onAdded(res.review);
-        setComment('');
-        notify('Thank you for your review!');
-      }
+      onAdded(review);
+      setComment('');
+      notify('Thank you for your review!');
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Could not submit review', 'error');
     } finally {

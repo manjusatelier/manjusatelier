@@ -9,7 +9,6 @@ export default function OfflineReview() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [warningMessage, setWarningMessage] = useState('');
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -82,17 +81,12 @@ export default function OfflineReview() {
         payload.append('image', imageFile);
       }
 
-      const res = await api.upload<{ success: boolean; review: any; warning?: string }>('/reviews/offline', payload);
-      if (res.warning) {
-        setWarningMessage(res.warning);
-      } else {
-        setWarningMessage('');
-      }
+      await api.upload('/reviews/offline', payload);
       setStatus('success');
     } catch (error: any) {
       console.error('Review submission error:', error);
       setStatus('error');
-      setErrorMessage(error.response?.data?.message || 'Failed to submit review. Please try again.');
+      setErrorMessage(error.message || 'Failed to submit review. Please try again.');
     }
   };
 
@@ -112,22 +106,15 @@ export default function OfflineReview() {
               <CheckCircle size={40} />
             </div>
             <h3 className="font-serif text-3xl text-brown-dark">Thank You!</h3>
-            {warningMessage ? (
-              <div className="mt-4 rounded-lg bg-orange-50 p-4 text-sm text-orange-800 border border-orange-200 text-left">
-                {warningMessage}
-              </div>
-            ) : (
-              <p className="mt-4 max-w-sm text-lg text-brown/80">
-                Your feedback means the world to us and helps others know what to expect.
-              </p>
-            )}
+            <p className="mt-4 max-w-sm text-lg text-brown/80">
+              Your feedback means the world to us and helps others know what to expect.
+            </p>
             <Button
               className="mt-8"
               onClick={() => {
                 setStatus('idle');
                 setFormData({ ...formData, comment: '', rating: 5, productId: '' });
                 setImageFile(null);
-                setWarningMessage('');
               }}
               variant="secondary"
             >

@@ -26,7 +26,9 @@ export const createReview = asyncHandler(async (req, res) => {
   if (existing) throw new ApiError(409, 'You already reviewed this product');
 
   const isFoul = await checkFoulLanguage(comment);
-  const status = isFoul ? 'pending' : 'approved';
+  if (isFoul) {
+    throw new ApiError(400, 'Such words are prohibited. Please use appropriate language - we understand you received some damaged product or we did not meet your expectations. We are sorry for that but be respectful.');
+  }
 
   const review = await Review.create({
     product: productId,
@@ -34,14 +36,10 @@ export const createReview = asyncHandler(async (req, res) => {
     name: req.user.name,
     rating,
     comment,
-    status,
+    status: 'approved',
   });
 
-  if (isFoul) {
-    res.status(201).json({ success: true, review, warning: 'We understand you did not receive the product as expected. Please refrain from foul language. Your review has been flagged and will be manually reviewed.' });
-  } else {
-    res.status(201).json({ success: true, review });
-  }
+  res.status(201).json({ success: true, review });
 });
 
 export const deleteReview = asyncHandler(async (req, res) => {
@@ -66,7 +64,9 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
   }
 
   const isFoul = await checkFoulLanguage(comment);
-  const status = isFoul ? 'pending' : 'approved';
+  if (isFoul) {
+    throw new ApiError(400, 'Such words are prohibited. Please use appropriate language - we understand you received some damaged product or we did not meet your expectations. We are sorry for that but be respectful.');
+  }
 
   const review = await Review.create({
     product: productId,
@@ -75,14 +75,10 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     rating,
     comment,
     image: imageUrl,
-    status,
+    status: 'approved',
   });
 
-  if (isFoul) {
-    res.status(201).json({ success: true, review, warning: 'We understand you did not receive the product as expected. Please refrain from foul language. Your review has been flagged and will be manually reviewed.' });
-  } else {
-    res.status(201).json({ success: true, review });
-  }
+  res.status(201).json({ success: true, review });
 });
 
 // Admin endpoint to get pending reviews
