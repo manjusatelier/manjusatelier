@@ -12,6 +12,7 @@ import {
   RefreshCw,
   ChevronRight,
   ChevronLeft,
+  Trash2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Product, Review } from '@/types';
@@ -453,9 +454,16 @@ export default function ProductDetails() {
               product={product}
               reviews={reviews}
               canReview={!!user}
+              user={user}
               onAdded={(r) => {
                 setReviews((prev) => [r, ...prev]);
-                setProduct((p) => (p ? { ...p, reviewCount: p.reviewCount + 1 } : p));
+                if (r.status === 'approved') {
+                  setProduct((p) => (p ? { ...p, reviewCount: p.reviewCount + 1 } : p));
+                }
+              }}
+              onDeleted={(id) => {
+                setReviews((prev) => prev.filter(r => r._id !== id));
+                setProduct((p) => (p ? { ...p, reviewCount: Math.max(0, p.reviewCount - 1) } : p));
               }}
             />
           )}
@@ -618,12 +626,16 @@ function ReviewsTab({
   product,
   reviews,
   canReview,
+  user,
   onAdded,
+  onDeleted,
 }: {
   product: Product;
   reviews: Review[];
   canReview: boolean;
+  user: any;
   onAdded: (r: Review) => void;
+  onDeleted: (id: string) => void;
 }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -634,13 +646,17 @@ function ReviewsTab({
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { review } = await api.post<{ review: Review }>(
+      const res = await api.post<{ review: Review, warning?: string }>(
         `/products/${product._id}/reviews`,
         { rating, comment }
       );
-      onAdded(review);
-      setComment('');
-      notify('Thank you for your review!');
+      if (res.warning) {
+        notify(res.warning, 'error');
+      } else {
+        onAdded(res.review);
+        setComment('');
+        notify('Thank you for your review!');
+      }
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Could not submit review', 'error');
     } finally {
@@ -701,10 +717,31 @@ function ReviewsTab({
           </p>
         ) : (
           reviews.map((r) => (
-            <div key={r._id} className="card-surface p-5">
+            <div key={r._id} className="card-surface p-5 relative">
               <div className="flex items-center justify-between">
                 <p className="font-medium text-brown-dark dark:text-beige">{r.name}</p>
-                <Rating value={r.rating} />
+                <div className="flex items-center gap-4">
+                  <Rating value={r.rating} />
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this review?')) {
+                          try {
+                            await api.delete(`/reviews/${r._id}`);
+                            notify('Review deleted');
+                            onDeleted(r._id);
+                          } catch (err) {
+                            notify('Failed to delete review', 'error');
+                          }
+                        }
+                      }}
+                      className="text-red-500 hover:text-red-600 transition-colors"
+                      title="Delete Review"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
               {r.comment && (
                 <p className="mt-2 text-sm text-brown/70 dark:text-beige/70">{r.comment}</p>

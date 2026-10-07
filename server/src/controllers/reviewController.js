@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Review from '../models/Review.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
+import { checkFoulLanguage } from '../utils/aiModeration.js';
 
 export const getProductReviews = asyncHandler(async (req, res) => {
   const reviews = await Review.find({ product: req.params.productId, status: 'approved' }).sort({ createdAt: -1 });
@@ -24,14 +25,23 @@ export const createReview = asyncHandler(async (req, res) => {
   const existing = await Review.findOne({ product: productId, user: req.user._id });
   if (existing) throw new ApiError(409, 'You already reviewed this product');
 
+  const isFoul = await checkFoulLanguage(comment);
+  const status = isFoul ? 'pending' : 'approved';
+
   const review = await Review.create({
     product: productId,
     user: req.user._id,
     name: req.user.name,
     rating,
     comment,
+    status,
   });
-  res.status(201).json({ success: true, review });
+
+  if (isFoul) {
+    res.status(201).json({ success: true, review, warning: 'We understand you did not receive the product as expected. Please refrain from foul language. Your review has been flagged and will be manually reviewed.' });
+  } else {
+    res.status(201).json({ success: true, review });
+  }
 });
 
 export const deleteReview = asyncHandler(async (req, res) => {
@@ -55,6 +65,9 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     imageUrl = req.file.path;
   }
 
+  const isFoul = await checkFoulLanguage(comment);
+  const status = isFoul ? 'pending' : 'approved';
+
   const review = await Review.create({
     product: productId,
     user: new mongoose.Types.ObjectId(), // fake user ID for offline to bypass unique index
@@ -62,9 +75,14 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     rating,
     comment,
     image: imageUrl,
-    status: 'pending',
+    status,
   });
-  res.status(201).json({ success: true, review });
+
+  if (isFoul) {
+    res.status(201).json({ success: true, review, warning: 'We understand you did not receive the product as expected. Please refrain from foul language. Your review has been flagged and will be manually reviewed.' });
+  } else {
+    res.status(201).json({ success: true, review });
+  }
 });
 
 // Admin endpoint to get pending reviews
