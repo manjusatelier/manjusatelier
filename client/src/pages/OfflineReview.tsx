@@ -81,11 +81,7 @@ export default function OfflineReview() {
         payload.append('image', imageFile);
       }
 
-      await api.post('/reviews/offline', payload, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.upload('/reviews/offline', payload);
       setStatus('success');
     } catch (error: any) {
       console.error('Review submission error:', error);
