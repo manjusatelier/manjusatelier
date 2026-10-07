@@ -25,10 +25,12 @@ export const createReview = asyncHandler(async (req, res) => {
   const existing = await Review.findOne({ product: productId, user: req.user._id });
   if (existing) throw new ApiError(409, 'You already reviewed this product');
 
-  const isFoul = await checkFoulLanguage(comment);
-  if (isFoul) {
+  const moderationResult = await checkFoulLanguage(comment);
+  if (moderationResult === 'FOUL') {
     throw new ApiError(400, 'Such words are prohibited. Please use appropriate language - we understand you received some damaged product or we did not meet your expectations. We are sorry for that but be respectful.');
   }
+
+  const reviewStatus = moderationResult === 'CLEAN' ? 'approved' : 'pending';
 
   const review = await Review.create({
     product: productId,
@@ -36,7 +38,7 @@ export const createReview = asyncHandler(async (req, res) => {
     name: req.user.name,
     rating,
     comment,
-    status: 'approved',
+    status: reviewStatus,
   });
 
   res.status(201).json({ success: true, review });
@@ -63,10 +65,12 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     imageUrl = req.file.path;
   }
 
-  const isFoul = await checkFoulLanguage(comment);
-  if (isFoul) {
+  const moderationResult = await checkFoulLanguage(comment);
+  if (moderationResult === 'FOUL') {
     throw new ApiError(400, 'Such words are prohibited. Please use appropriate language - we understand you received some damaged product or we did not meet your expectations. We are sorry for that but be respectful.');
   }
+
+  const reviewStatus = moderationResult === 'CLEAN' ? 'approved' : 'pending';
 
   const review = await Review.create({
     product: productId,
@@ -75,7 +79,7 @@ export const createOfflineReview = asyncHandler(async (req, res) => {
     rating,
     comment,
     image: imageUrl,
-    status: 'approved',
+    status: reviewStatus,
   });
 
   res.status(201).json({ success: true, review });
