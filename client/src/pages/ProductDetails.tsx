@@ -709,6 +709,13 @@ function ReviewsTab({
               {r.comment && (
                 <p className="mt-2 text-sm text-brown/70 dark:text-beige/70">{r.comment}</p>
               )}
+              {r.image && (
+                <div className="mt-3">
+                  <a href={r.image} target="_blank" rel="noopener noreferrer">
+                    <img src={r.image} alt="Review attachment" className="h-24 w-24 rounded-lg object-cover hover:opacity-80 transition-opacity" />
+                  </a>
+                </div>
+              )}
               <p className="mt-2 text-xs text-brown/40">
                 {formatDate(r.createdAt)}
               </p>

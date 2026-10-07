@@ -11,6 +11,7 @@ interface Review {
   name: string;
   rating: number;
   comment: string;
+  image?: string;
   status: 'pending' | 'approved';
   createdAt: string;
   product?: {
@@ -118,6 +119,13 @@ export default function AdminReviews() {
                   <p className="mt-2 text-sm text-brown/80 dark:text-beige/80 italic">
                     "{review.comment}"
                   </p>
+                )}
+                {review.image && (
+                  <div className="mt-3">
+                    <a href={review.image} target="_blank" rel="noopener noreferrer">
+                      <img src={review.image} alt="Review attachment" className="h-24 w-24 rounded-lg object-cover hover:opacity-80 transition-opacity" />
+                    </a>
+                  </div>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">

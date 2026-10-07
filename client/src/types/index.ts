@@ -41,6 +41,8 @@ export interface Review {
   name: string;
   rating: number;
   comment?: string;
+  image?: string;
+  status?: 'pending' | 'approved';
   createdAt: string;
 }
 
