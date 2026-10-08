@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Plus, Pencil, Trash2, X, Upload, Package, Eye, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatPrice, finalPrice, cn } from '@/lib/utils';
@@ -6,7 +6,8 @@ import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import type { Product, Badge, Category } from '@/types';
+import { LazyImage } from '@/components/ui/LazyImage';
+import type { Product, Badge, Category, Paginated } from '@/types';
 
 const ALL_BADGES: Badge[] = ['New', 'Sale', 'Limited', 'Handmade'];
 
@@ -57,18 +58,53 @@ export default function Products() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const { notify } = useToast();
+  
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  const load = () => {
+  const load = (pageNum: number, search: string) => {
     setLoading(true);
+    const query = new URLSearchParams({ limit: '48', page: String(pageNum) });
+    if (search) query.set('search', search);
+
     api
-      .get<{ products: Product[] }>('/products?limit=48')
-      .then(({ products }) => setProducts(products))
+      .get<Paginated<Product> & { success: boolean }>(`/products?${query.toString()}`)
+      .then((res) => {
+        if (pageNum === 1) {
+          setProducts(res.products);
+        } else {
+          setProducts((prev) => [...prev, ...res.products]);
+        }
+        setHasMore(pageNum < res.pages);
+      })
       .catch((e) => notify(e.message, 'error'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setPage(1);
+    load(1, searchQuery);
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          load(nextPage, searchQuery);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+    return () => observer.disconnect();
+  }, [loading, hasMore, page, searchQuery]);
 
   const openNew = () => {
     setEditing(null);
@@ -116,7 +152,7 @@ export default function Products() {
         </div>
       )}
 
-      {loading ? (
+      {loading && page === 1 ? (
         <div className="grid gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-20 w-full rounded-2xl" />
@@ -136,11 +172,12 @@ export default function Products() {
         </div>
       ) : (
         <div className="space-y-3">
-          {products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
+          {products.map((p) => (
             <div key={p._id} className="card-surface flex items-center gap-4 p-3">
-              <img
+              <LazyImage
                 src={p.images[0]}
                 alt={p.name}
+                optWidth={150}
                 className="h-16 w-16 shrink-0 rounded-xl object-cover"
               />
               <div className="min-w-0 flex-1">
@@ -181,6 +218,12 @@ export default function Products() {
               </div>
             </div>
           ))}
+          
+          <div ref={observerTarget} className="h-4" />
+          
+          {loading && page > 1 && (
+            <div className="py-4 text-center text-sm text-brown/60">Loading more...</div>
+          )}
         </div>
       )}
 
@@ -191,7 +234,7 @@ export default function Products() {
           onClose={() => setShowForm(false)}
           onSaved={() => {
             setShowForm(false);
-            load();
+            load(1, searchQuery);
           }}
         />
       )}
