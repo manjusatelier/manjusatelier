@@ -29,7 +29,7 @@ import { requestNotificationPermission, subscribeToPushNotifications } from '@/u
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/shop', label: 'Shop' },
-  { to: '/categories', label: 'Categories' },
+  { to: '#', label: 'Categories' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ];
@@ -170,19 +170,25 @@ export function Navbar() {
             >
               <NavLink
                 to={link.to}
+                onClick={(e) => {
+                  if (link.label === 'Categories') {
+                    e.preventDefault();
+                    setMegaOpen(!megaOpen);
+                  }
+                }}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors',
                     transparent
                       ? 'text-white/90 hover:text-white'
                       : 'text-brown-dark hover:text-brown dark:text-beige hover:bg-brown/5 dark:hover:bg-beige/10',
-                    isActive && !transparent && 'text-brown bg-brown/10 dark:bg-beige/10',
-                    isActive && transparent && 'bg-white/20 text-white'
+                    isActive && !transparent && link.label !== 'Categories' && 'text-brown bg-brown/10 dark:bg-beige/10',
+                    isActive && transparent && link.label !== 'Categories' && 'bg-white/20 text-white'
                   )
                 }
               >
                 {link.label}
-                {link.label === 'Categories' && <ChevronDown size={14} />}
+                {link.label === 'Categories' && <ChevronDown size={14} className={cn("transition-transform", megaOpen && "rotate-180")} />}
               </NavLink>
 
               {/* Mega menu */}
@@ -451,14 +457,49 @@ export function Navbar() {
           <div className="max-h-[calc(100vh-80px)] overflow-y-auto">
               <ul className="container-x flex flex-col gap-1 py-4">
               {navLinks.map((link) => (
-                <li key={link.to}>
-                  <NavLink
-                    to={link.to}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-brown-dark hover:bg-beige/40 dark:text-beige dark:hover:bg-beige/10"
-                  >
-                    {link.label}
-                  </NavLink>
+                <li key={link.label}>
+                  {link.label === 'Categories' ? (
+                    <>
+                      <button
+                        onClick={() => setMegaOpen(!megaOpen)}
+                        className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-brown-dark hover:bg-beige/40 dark:text-beige dark:hover:bg-beige/10"
+                      >
+                        {link.label}
+                        <ChevronDown size={16} className={cn("transition-transform", megaOpen && "rotate-180")} />
+                      </button>
+                      <AnimatePresence>
+                        {megaOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="flex flex-col gap-1 pl-8 pr-4 pt-1 pb-2">
+                              {categories.map((c) => (
+                                <Link
+                                  key={c._id}
+                                  to={`/shop?category=${c.slug}`}
+                                  onClick={() => setMobileOpen(false)}
+                                  className="block rounded-xl px-4 py-2 text-sm text-brown-dark hover:bg-beige/40 dark:text-beige dark:hover:bg-beige/10"
+                                >
+                                  {c.name} ({c.productCount ?? 0})
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  ) : (
+                    <NavLink
+                      to={link.to}
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-xl px-4 py-3 text-brown-dark hover:bg-beige/40 dark:text-beige dark:hover:bg-beige/10"
+                    >
+                      {link.label}
+                    </NavLink>
+                  )}
                 </li>
               ))}
               <li className="mt-2 border-t border-brown/10 pt-2 flex gap-2 px-4 pb-2">
