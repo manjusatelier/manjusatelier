@@ -52,7 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localItems.forEach(item => {
         if (mergedMap.has(item.product._id)) {
            const existing = mergedMap.get(item.product._id)!;
-           existing.quantity = Math.min(existing.quantity + item.quantity, existing.product.stock);
+           existing.quantity = Math.min(existing.quantity + item.quantity, existing.product.stock, 10);
         } else {
            mergedMap.set(item.product._id, item);
         }
@@ -120,11 +120,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return curr.map((i) =>
           i.product._id === product._id
-            ? { ...i, quantity: Math.min(i.quantity + quantity, product.stock) }
+            ? { ...i, quantity: Math.min(i.quantity + quantity, product.stock, 10) }
             : i
         );
       }
-      return [...curr, { product, quantity: Math.min(quantity, product.stock) }];
+      return [...curr, { product, quantity: Math.min(quantity, product.stock, 10) }];
     });
     setLastAddedId(product._id);
     setTimeout(() => setLastAddedId(null), 600);
@@ -138,7 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (quantity < 1) return;
     setItems((curr) =>
       curr.map((i) =>
-        i.product._id === productId ? { ...i, quantity: Math.min(quantity, i.product.stock) } : i
+        i.product._id === productId ? { ...i, quantity: Math.min(quantity, i.product.stock, 10) } : i
       )
     );
   };

@@ -313,7 +313,7 @@ export default function ProductDetails() {
               </button>
               <span className="w-10 text-center font-medium">{qty}</span>
               <button
-                onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
+                onClick={() => setQty((q) => Math.min(product.stock, 10, q + 1))}
                 className="grid h-11 w-11 place-items-center rounded-full hover:bg-beige/40"
                 aria-label="Increase quantity"
               >
@@ -344,6 +344,15 @@ export default function ProductDetails() {
             <Button onClick={buyNow} disabled={!product.inStock} variant="gold" size="lg">
               Buy Now
             </Button>
+          </div>
+
+          <div className="mt-3">
+            <Link 
+              to={`/bulk-orders?product=${encodeURIComponent(product.name)}`}
+              className="text-sm font-medium text-brown hover:text-gold transition-colors underline decoration-brown/30 underline-offset-4"
+            >
+              Need more than 10? Request a bulk order
+            </Link>
           </div>
 
           {!product.inStock && (

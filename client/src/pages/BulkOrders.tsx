@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Mail, MessageCircle, Building, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function BulkOrders() {
+  const [searchParams] = useSearchParams();
+  const initialProduct = searchParams.get('product') || '';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     organization: '',
-    productsOfInterest: '',
+    productsOfInterest: initialProduct,
     expectedQuantity: '',
     details: '',
   });

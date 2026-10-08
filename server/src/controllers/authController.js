@@ -106,7 +106,7 @@ export const syncCart = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   user.cart = items.map(item => ({
     product: item.productId,
-    quantity: item.quantity
+    quantity: Math.min(item.quantity || 1, 10)
   }));
   
   await user.save();
