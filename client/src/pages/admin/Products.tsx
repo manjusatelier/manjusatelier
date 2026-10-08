@@ -56,6 +56,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { notify } = useToast();
 
   const load = () => {
@@ -103,23 +104,39 @@ export default function Products() {
         </Button>
       </header>
 
+      {!showForm && (
+        <div className="mb-6">
+          <input
+            type="search"
+            placeholder="Search products by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full max-w-md rounded-lg border border-brown/20 bg-white px-4 py-2 text-sm outline-none transition-colors focus:border-gold dark:border-beige/20 dark:bg-[#2c2621] dark:text-beige"
+          />
+        </div>
+      )}
+
       {loading ? (
         <div className="grid gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-20 w-full rounded-2xl" />
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
         <div className="card-surface grid place-items-center py-20 text-center">
           <Package className="text-brown/40" size={40} />
-          <p className="mt-3 font-serif text-xl text-brown-dark dark:text-beige">No products</p>
-          <Button className="mt-4" onClick={openNew}>
-            Add your first product
-          </Button>
+          <p className="mt-3 font-serif text-xl text-brown-dark dark:text-beige">
+            {searchQuery ? 'No products found matching your search' : 'No products'}
+          </p>
+          {!searchQuery && (
+            <Button className="mt-4" onClick={openNew}>
+              Add your first product
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {products.map((p) => (
+          {products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((p) => (
             <div key={p._id} className="card-surface flex items-center gap-4 p-3">
               <img
                 src={p.images[0]}
