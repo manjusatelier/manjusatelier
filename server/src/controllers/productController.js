@@ -141,6 +141,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   }
   const product = await Product.create(data);
   await clearCachePattern('products');
+  await clearCachePattern('categories');
 
   // Dispatch Social Media Webhook if requested and at least one platform is selected
   if (data.postToSocials && process.env.MAKE_WEBHOOK_URL && (data.postToInstagram || data.postToFacebook || data.postToX)) {
@@ -233,6 +234,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
 
   await clearCachePattern('products');
+  await clearCachePattern('categories');
   res.json({ success: true, product });
 });
 
@@ -240,6 +242,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
   await clearCachePattern('products');
+  await clearCachePattern('categories');
   res.json({ success: true, message: 'Product deleted' });
 });
 

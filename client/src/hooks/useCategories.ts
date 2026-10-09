@@ -2,28 +2,23 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { Category } from '@/types';
 
-// Simple module-level cache so categories are fetched once.
-let cache: Category[] | null = null;
-const listeners = new Set<(c: Category[]) => void>();
-
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>(cache || []);
-  const [loading, setLoading] = useState(!cache);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (cache) return;
-    const update = (c: Category[]) => setCategories(c);
-    listeners.add(update);
+    let active = true;
     api
       .get<{ categories: Category[] }>('/categories')
-      .then(({ categories }) => {
-        cache = categories;
-        listeners.forEach((l) => l(categories));
+      .then((res) => {
+        if (active) setCategories(res.categories);
       })
       .catch(() => void 0)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
-      listeners.delete(update);
+      active = false;
     };
   }, []);
 
