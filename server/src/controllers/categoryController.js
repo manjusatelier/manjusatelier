@@ -11,6 +11,7 @@ export const getCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find().sort({ name: 1 }).lean();
   // attach product counts
   const counts = await Product.aggregate([
+    { $unwind: '$category' },
     { $group: { _id: '$category', count: { $sum: 1 } } },
   ]);
   const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.count]));
