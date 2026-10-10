@@ -34,7 +34,6 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [desktopProfileOpen, setDesktopProfileOpen] = useState(false);
@@ -75,15 +74,7 @@ export function Navbar() {
     }
   };
 
-  const isHome = location.pathname === '/';
   const transparent = false;
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 30);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
