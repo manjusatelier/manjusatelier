@@ -229,7 +229,7 @@ export default function Shop() {
             <select
               value={params.get('sort') || 'newest'}
               onChange={(e) => update('sort', e.target.value)}
-              className="rounded-full border border-brown/15 bg-white px-4 py-2 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
+              className="h-[38px] rounded-full border border-brown/15 bg-white px-4 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
             >
               {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>
