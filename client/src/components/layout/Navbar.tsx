@@ -76,8 +76,7 @@ export function Navbar() {
   };
 
   const isHome = location.pathname === '/';
-  const showHero = isHome && !sessionStorage.getItem('hasSeenHero');
-  const transparent = showHero && !scrolled && !mobileOpen;
+  const transparent = false;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);

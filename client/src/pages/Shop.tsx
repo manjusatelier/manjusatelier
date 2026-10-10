@@ -189,7 +189,9 @@ export default function Shop() {
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         {/* Desktop filters */}
         <aside className="hidden lg:block">
-          <div className="sticky top-24">{FiltersPanel}</div>
+          <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4 custom-scrollbar">
+            {FiltersPanel}
+          </div>
         </aside>
 
         <div>
