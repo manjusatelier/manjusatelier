@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, LayoutGrid, List, X, Search } from 'lucide-react';
+import { SlidersHorizontal, LayoutGrid, List, X, Search, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
@@ -30,7 +30,19 @@ export default function Shop() {
   const { categories } = useCategories();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = React.useRef<HTMLDivElement>(null);
   const [maxPrice, setMaxPrice] = useState<number>(Number(params.get('maxPrice')) || 5000);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   usePageMeta({ title: "Shop — Manju's Atelier" });
 
@@ -226,17 +238,35 @@ export default function Shop() {
               />
             </div>
 
-            <select
-              value={params.get('sort') || 'newest'}
-              onChange={(e) => update('sort', e.target.value)}
-              className="h-[38px] rounded-full border border-brown/15 bg-white px-4 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
-            >
-              {sortOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative" ref={sortRef}>
+              <button
+                type="button"
+                onClick={() => setSortOpen(!sortOpen)}
+                className="flex h-[38px] items-center justify-between gap-3 rounded-full border border-brown/15 bg-white px-4 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
+              >
+                <span>{sortOptions.find((o) => o.value === (params.get('sort') || 'newest'))?.label}</span>
+                <ChevronDown size={14} className={cn("text-brown/40 transition-transform", sortOpen && "rotate-180")} />
+              </button>
+              {sortOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 flex w-48 flex-col overflow-hidden rounded-xl border border-brown/15 bg-white shadow-lg dark:bg-[#26201a]">
+                  {sortOptions.map((o) => (
+                    <button
+                      key={o.value}
+                      onClick={() => {
+                        update('sort', o.value);
+                        setSortOpen(false);
+                      }}
+                      className={cn(
+                        "px-4 py-2.5 text-left text-sm transition-colors hover:bg-beige/40 dark:hover:bg-beige/10",
+                        (params.get('sort') || 'newest') === o.value && "bg-brown/5 font-medium text-brown-dark dark:text-cream"
+                      )}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="hidden rounded-full border border-brown/15 p-1 sm:flex">
               <button
