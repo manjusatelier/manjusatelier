@@ -107,21 +107,24 @@ export default function Shop() {
     <div className="space-y-7">
       <FilterGroup title="Category">
         <div className="space-y-1.5">
-          {categories.filter(c => c.productCount && c.productCount > 0).map((c) => (
-            <button
-              key={c._id}
-              onClick={() => update('category', params.get('category') === c.slug ? undefined : c.slug)}
-              className={cn(
-                'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                params.get('category') === c.slug
-                  ? 'bg-brown text-cream'
-                  : 'hover:bg-beige/40 dark:hover:bg-beige/10'
-              )}
-            >
-              {c.name}
-              <span className="text-xs opacity-60">{c.productCount ?? 0}</span>
-            </button>
-          ))}
+          {categories.filter(c => c.productCount && c.productCount > 0).map((c) => {
+            const dynamicCount = data?.facets?.categoryCounts?.[c._id] ?? c.productCount ?? 0;
+            return (
+              <button
+                key={c._id}
+                onClick={() => update('category', params.get('category') === c.slug ? undefined : c.slug)}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                  params.get('category') === c.slug
+                    ? 'bg-brown text-cream'
+                    : 'hover:bg-beige/40 dark:hover:bg-beige/10'
+                )}
+              >
+                {c.name}
+                <span className="text-xs opacity-60">{dynamicCount}</span>
+              </button>
+            );
+          })}
         </div>
       </FilterGroup>
 

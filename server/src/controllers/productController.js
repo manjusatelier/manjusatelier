@@ -66,14 +66,29 @@ export const getProducts = asyncHandler(async (req, res) => {
   const limitNum = Math.min(48, Math.max(1, Number(limit)));
   const skip = (pageNum - 1) * limitNum;
 
-  const [products, total] = await Promise.all([
+  const facetFilter = { ...filter };
+  delete facetFilter.category; // Get counts across all categories matching other filters
+
+  const [products, total, categoryFacets] = await Promise.all([
     Product.find(filter)
       .populate('category', 'name slug')
       .sort(sortMap[sort] || sortMap.newest)
       .skip(skip)
       .limit(limitNum),
     Product.countDocuments(filter),
+    Product.aggregate([
+      { $match: facetFilter },
+      { $unwind: '$category' },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ])
   ]);
+
+  const facets = {
+    categoryCounts: categoryFacets.reduce((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {})
+  };
 
   const responseData = {
     success: true,
@@ -81,6 +96,7 @@ export const getProducts = asyncHandler(async (req, res) => {
     total,
     page: pageNum,
     pages: Math.ceil(total / limitNum),
+    facets,
   };
 
   await setCache(cacheKey, responseData, 3600);
