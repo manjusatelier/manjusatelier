@@ -28,7 +28,6 @@ import { requestNotificationPermission, subscribeToPushNotifications } from '@/u
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/shop', label: 'Shop' },
   { to: '#', label: 'Categories' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },

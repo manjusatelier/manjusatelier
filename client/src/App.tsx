@@ -8,7 +8,7 @@ import { Chatbot } from '@/components/ui/Chatbot';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ProductModal } from '@/components/product/ProductModal';
 
-const Home = lazy(() => import('@/pages/Home'));
+// const Home = lazy(() => import('@/pages/Home'));
 const Shop = lazy(() => import('@/pages/Shop'));
 const ProductDetails = lazy(() => import('@/pages/ProductDetails'));
 const Categories = lazy(() => import('@/pages/Categories'));
@@ -78,7 +78,7 @@ export default function App() {
       <ErrorBoundary>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Shop />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:slug" element={<ProductDetails />} />
             <Route path="/categories" element={<Categories />} />
