@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ProductModal } from '@/components/product/ProductModal';
 
 // const Home = lazy(() => import('@/pages/Home'));
+const intentionallyBroken: number = "this is a string to fail the build";
 const Shop = lazy(() => import('@/pages/Shop'));
 const ProductDetails = lazy(() => import('@/pages/ProductDetails'));
 const Categories = lazy(() => import('@/pages/Categories'));
