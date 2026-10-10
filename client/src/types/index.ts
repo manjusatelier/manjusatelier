@@ -128,4 +128,7 @@ export interface Paginated<T> {
   total: number;
   page: number;
   pages: number;
+  facets?: {
+    categoryCounts?: Record<string, number>;
+  };
 }
