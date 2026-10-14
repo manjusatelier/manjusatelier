@@ -117,6 +117,86 @@ export const getFeatured = asyncHandler(async (req, res) => {
   res.json(responseData);
 });
 
+const COLOR_WORDS = [
+  'purple', 'yellow', 'red', 'white', 'blue', 'royal blue', 'light blue', 'sky blue',
+  'maroon', 'light pink', 'blush pink', 'pink', 'orange', 'green', 'gold', 'golden',
+  'silver', 'black', 'grey', 'gray', 'beige', 'brown', 'teal', 'multicolor',
+  'multi-color', 'magenta', 'cyan', 'lavender', 'peach', 'cream', 'violet',
+  'emerald', 'turquoise', 'ruby', 'copper', 'bronze', 'navy'
+];
+
+export function getProductVariantBaseName(name, color) {
+  if (!name) return '';
+  let base = name;
+
+  if (base.includes('|')) {
+    base = base.split('|')[0].trim();
+  } else if (base.includes(' - ')) {
+    const parts = base.split(' - ');
+    const lastPart = parts[parts.length - 1].trim().toLowerCase();
+    if (COLOR_WORDS.some(c => lastPart.includes(c)) || (color && lastPart.includes(color.toLowerCase()))) {
+      parts.pop();
+      base = parts.join(' - ').trim();
+    }
+  }
+
+  const colorTokens = [];
+  if (color) {
+    color.toLowerCase().split(/[\+\/,& ]+/).forEach(t => {
+      const clean = t.trim();
+      if (clean.length > 2) colorTokens.push(clean);
+    });
+  }
+  COLOR_WORDS.forEach(c => {
+    c.split(/[\+\/,& ]+/).forEach(t => {
+      const clean = t.trim();
+      if (clean.length > 2) colorTokens.push(clean);
+    });
+  });
+
+  const uniqueTokens = [...new Set(colorTokens)].sort((a, b) => b.length - a.length);
+  let normalized = base.toLowerCase();
+  for (const token of uniqueTokens) {
+    const regex = new RegExp('\\b' + token + '\\b', 'gi');
+    normalized = normalized.replace(regex, '');
+  }
+
+  return normalized
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(/[-–—_]+/g, ' ')
+    .trim();
+}
+
+export async function findVariantsForProduct(product) {
+  if (!product) return [];
+  const baseName = getProductVariantBaseName(product.name, product.color);
+  if (!baseName || baseName.length < 3) return [];
+
+  const categoryIds = Array.isArray(product.category)
+    ? product.category.map(c => (c._id ? c._id : c))
+    : [product.category];
+
+  const query = categoryIds.length > 0 ? { category: { $in: categoryIds } } : {};
+  const candidates = await Product.find(query)
+    .select('_id name slug color price discount images stock inStock badges')
+    .lean();
+
+  const matched = candidates.filter(p => {
+    const candidateBase = getProductVariantBaseName(p.name, p.color);
+    return candidateBase === baseName;
+  });
+
+  if (matched.length <= 1) return [];
+
+  return matched.map(p => ({
+    ...p,
+    finalPrice: Math.round(p.price * (1 - (p.discount || 0) / 100)),
+    inStock: p.stock > 0,
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export const getProductBySlug = asyncHandler(async (req, res) => {
   const cacheKey = `products:slug:${req.params.slug}`;
   const cached = await getCache(cacheKey);
@@ -128,15 +208,25 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
   );
   if (!product) throw new ApiError(404, 'Product not found');
 
+  const variants = await findVariantsForProduct(product);
+  const variantIds = variants.map(v => v._id);
+  const excludeIds = [product._id, ...variantIds];
+
   const categoryIds = product.category.map(c => c._id);
   const related = await Product.find({
     category: { $in: categoryIds },
-    _id: { $ne: product._id },
+    _id: { $nin: excludeIds },
   })
     .limit(4)
     .populate('category', 'name slug');
 
-  const responseData = { success: true, product, related };
+  const productObj = product.toObject ? product.toObject({ virtuals: true }) : product;
+  const responseData = {
+    success: true,
+    product: { ...productObj, variants },
+    related,
+    variants,
+  };
   await setCache(cacheKey, responseData, 3600);
   res.json(responseData);
 });

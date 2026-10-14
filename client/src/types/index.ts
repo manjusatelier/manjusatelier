@@ -32,6 +32,21 @@ export interface Product {
   tags: string[];
   badges: Badge[];
   featured?: boolean;
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant {
+  _id: string;
+  name: string;
+  slug: string;
+  color?: string;
+  price: number;
+  discount: number;
+  finalPrice: number;
+  images: string[];
+  stock: number;
+  inStock: boolean;
+  badges?: Badge[];
 }
 
 export interface Review {

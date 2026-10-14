@@ -13,7 +13,7 @@ export function formatPrice(value: number): string {
   }).format(value);
 }
 
-export function finalPrice(p: Product): number {
+export function finalPrice(p: { price: number; discount: number; finalPrice?: number }): number {
   return p.finalPrice ?? Math.round(p.price * (1 - p.discount / 100));
 }
 

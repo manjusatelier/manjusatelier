@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Minus,
   Plus,
+  Check,
   Truck,
   ShieldCheck,
   RefreshCw,
@@ -15,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { Product, Review } from '@/types';
+import type { Product, ProductVariant, Review } from '@/types';
 import { cn, formatPrice, finalPrice, categoryName, formatDate } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { useCart } from '@/context/CartContext';
@@ -34,10 +35,25 @@ import { trackEvent } from '@/lib/analytics';
 const tabs = ['Description', 'Details', 'Care', 'Reviews'] as const;
 type Tab = (typeof tabs)[number];
 
+function getVariantLabel(variant: { name: string; color?: string }): string {
+  if (variant.color) return variant.color;
+  if (variant.name.includes('|')) {
+    const after = variant.name.split('|')[1]?.trim();
+    if (after) return after;
+  }
+  if (variant.name.includes(' - ')) {
+    const parts = variant.name.split(' - ');
+    const last = parts[parts.length - 1]?.trim();
+    if (last) return last;
+  }
+  return variant.name;
+}
+
 export default function ProductDetails() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,9 +85,10 @@ export default function ProductDetails() {
     setQty(1);
     setTab('Description');
     api
-      .get<{ product: Product; related: Product[] }>(`/products/${slug}`)
+      .get<{ product: Product; related: Product[]; variants?: ProductVariant[] }>(`/products/${slug}`)
       .then((res) => {
         setProduct(res.product);
+        setVariants(res.variants || []);
         trackEvent('product_viewed', {}, res.product._id);
         
         // Fetch also-bought products
@@ -346,6 +363,73 @@ export default function ProductDetails() {
               </>
             )}
           </div>
+
+          {/* Color Variants (Amazon / Flipkart style) */}
+          {variants.length > 1 && (
+            <div className="mt-6 rounded-2xl border border-brown/15 bg-cream/40 p-4 dark:border-beige/15 dark:bg-[#231d17]/50">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-brown-dark dark:text-beige">
+                  <span className="text-brown/60 dark:text-beige/60">Colour: </span>
+                  <span className="font-semibold text-brown-dark dark:text-gold">
+                    {product.color || getVariantLabel(product)}
+                  </span>
+                </p>
+                <span className="rounded-full bg-brown/10 px-2.5 py-0.5 text-xs font-medium text-brown dark:bg-beige/10 dark:text-beige">
+                  {variants.length} Colours Available
+                </span>
+              </div>
+
+              <div className="mt-3.5 flex flex-wrap gap-2.5">
+                {variants.map((v) => {
+                  const isCurrent = v.slug === product.slug;
+                  const colorLabel = v.color || getVariantLabel(v);
+                  return (
+                    <Link
+                      key={v._id}
+                      to={`/product/${v.slug}`}
+                      className={cn(
+                        "group relative flex items-center gap-2.5 rounded-xl border p-1.5 pr-3.5 transition-all duration-200",
+                        isCurrent
+                          ? "border-brown bg-white shadow-sm ring-2 ring-brown dark:border-gold dark:bg-[#2c241c] dark:ring-gold"
+                          : "border-brown/15 bg-white/70 hover:border-brown/40 hover:bg-white hover:shadow-sm dark:border-beige/15 dark:bg-[#1c1712]/70 dark:hover:border-beige/30 dark:hover:bg-[#1c1712]"
+                      )}
+                      title={v.name}
+                    >
+                      {/* Product color thumbnail */}
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-beige/30 dark:bg-black/20">
+                        <img
+                          src={optimizeCloudinaryUrl(v.images[0], 120)}
+                          alt={colorLabel}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+
+                      <div className="flex flex-col text-left">
+                        <span className={cn(
+                          "text-xs font-semibold leading-tight line-clamp-1",
+                          isCurrent ? "text-brown-dark dark:text-beige" : "text-brown/80 dark:text-beige/80"
+                        )}>
+                          {colorLabel}
+                        </span>
+                        <span className="mt-0.5 text-[11px] font-medium text-brown/60 dark:text-beige/60">
+                          {formatPrice(finalPrice(v))}
+                        </span>
+                        {!v.inStock && (
+                          <span className="text-[10px] text-red-500 font-medium">Out of stock</span>
+                        )}
+                      </div>
+
+                      {isCurrent && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brown text-[10px] font-bold text-cream shadow dark:bg-gold dark:text-brown-dark">
+                          <Check size={10} strokeWidth={3} />
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <p className="mt-5 leading-relaxed text-brown/70 dark:text-beige/70">
             {product.description}
