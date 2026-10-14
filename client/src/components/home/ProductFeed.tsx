@@ -11,7 +11,7 @@ export function ProductFeed() {
   const { categories, loading: catLoading } = useCategories();
   const query = useMemo(() => ({
     category: selectedCategory || undefined,
-    limit: 24,
+    limit: 48,
   }), [selectedCategory]);
 
   const { data, loading: prodLoading } = useProducts(query);

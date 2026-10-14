@@ -23,7 +23,7 @@ const sortOptions = [
 const materials = ['Epoxy Resin', 'Terracotta Clay', 'Cotton Yarn', 'Wood', 'Canvas', 'Concrete'];
 const colors = ['Blue', 'Gold', 'Beige', 'Brown', 'Teal', 'Multicolor', 'White', 'Grey'];
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
@@ -63,26 +63,27 @@ export default function Shop() {
     [params, page]
   );
 
-  const { data, loading } = useProducts(query);
+  const { data, loading, loadingMore } = useProducts(query);
   const observerTarget = React.useRef<HTMLDivElement>(null);
 
   // Infinite Scroll Observer
   React.useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading && data && page < data.pages) {
+        if (entries[0].isIntersecting && !loading && !loadingMore && data && page < data.pages) {
           setPage((p) => p + 1);
         }
       },
-      { rootMargin: '100px' } // fetch a bit before they hit the absolute bottom
+      { rootMargin: '200px' }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
+    observer.observe(target);
 
     return () => observer.disconnect();
-  }, [loading, data, page, params, setParams]);
+  }, [loading, loadingMore, data?.pages, page]);
 
   const update = (key: string, value?: string) => {
     const next = new URLSearchParams(params);
@@ -331,7 +332,16 @@ export default function Shop() {
               ref={observerTarget}
               className="mt-12 flex items-center justify-center py-6 text-brown/60 dark:text-beige/60"
             >
-              Loading more products...
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brown/30 border-t-brown dark:border-beige/30 dark:border-t-beige" />
+                <span>Loading more products...</span>
+              </div>
+            </div>
+          )}
+
+          {data && data.products.length > 0 && page >= data.pages && (
+            <div className="mt-12 text-center text-sm text-brown/50 dark:text-beige/50 py-4">
+              ✨ You've viewed all {data.total} products
             </div>
           )}
         </div>

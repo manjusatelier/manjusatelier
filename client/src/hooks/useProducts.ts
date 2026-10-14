@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { api } from '@/lib/api';
 import type { Paginated, Product } from '@/types';
 
@@ -14,6 +14,7 @@ export interface ProductQuery {
   page?: number;
   limit?: number;
   featured?: boolean;
+  ids?: string;
 }
 
 function toQueryString(q: ProductQuery): string {
@@ -27,46 +28,77 @@ function toQueryString(q: ProductQuery): string {
 export function useProducts(query: ProductQuery) {
   const [data, setData] = useState<Paginated<Product> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const page = query.page || 1;
-  
-  // We track baseQuery to reset data when non-pagination filters change
-  const baseQuery = { ...query };
-  delete baseQuery.page;
   const key = toQueryString(query);
+
+  // Track non-pagination filters to reset data when filters change
+  const baseKey = useMemo(() => {
+    const base = { ...query };
+    delete base.page;
+    return toQueryString(base);
+  }, [
+    query.search,
+    query.category,
+    query.material,
+    query.color,
+    query.minPrice,
+    query.maxPrice,
+    query.inStock,
+    query.sort,
+    query.limit,
+    query.featured,
+    query.ids,
+  ]);
+
+  const prevBaseKeyRef = useRef(baseKey);
 
   useEffect(() => {
     let active = true;
-    
-    // Only show hard loading state on initial fetch or filter change (page 1)
-    if (page === 1) {
+    const isFilterChange = prevBaseKeyRef.current !== baseKey;
+    prevBaseKeyRef.current = baseKey;
+
+    if (page === 1 || isFilterChange) {
       setLoading(true);
       setData(null);
+    } else {
+      setLoadingMore(true);
     }
-    
+
     setError(null);
     api
       .get<Paginated<Product> & { success: boolean }>(`/products?${key}`)
       .then((res) => {
         if (active) {
           setData((prev) => {
-            // If it's page 1, or we don't have data, just replace it
-            if (page === 1 || !prev) return res;
-            // Otherwise, append the new products
+            // If it's page 1, a filter change, or we don't have previous data, replace it
+            if (page === 1 || isFilterChange || !prev) return res;
+            // Otherwise, append unique new products
+            const existingIds = new Set(prev.products.map((p) => p._id));
+            const newProducts = res.products.filter((p) => !existingIds.has(p._id));
             return {
               ...res,
-              products: [...prev.products, ...res.products],
+              products: [...prev.products, ...newProducts],
             };
           });
         }
       })
-      .catch((err) => active && setError(err.message))
-      .finally(() => active && setLoading(false));
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      });
+
     return () => {
       active = false;
     };
-  }, [key, page]);
+  }, [key, page, baseKey]);
 
-  return { data, loading, error };
+  return { data, loading, loadingMore, error };
 }
