@@ -46,10 +46,13 @@ export default function ProductDetails() {
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<Tab>('Description');
 
-  const { add } = useCart();
+  const { add, items, setQuantity } = useCart();
   const { has, toggle } = useWishlist();
   const { user } = useAuth();
   const { notify } = useToast();
+
+  const cartItem = items.find((i) => i.product._id === product?._id);
+  const currentQty = cartItem ? cartItem.quantity : qty;
 
   // Touch handlers removed in favor of native scroll snap
 
@@ -126,9 +129,67 @@ export default function ProductDetails() {
   };
 
   const buyNow = () => {
-    trackEvent('added_to_cart', { qty }, product._id);
-    add(product, qty);
+    if (!product || !product.inStock) return;
+    trackEvent('added_to_cart', { qty: currentQty }, product._id);
+    if (!cartItem) {
+      add(product, qty);
+    }
     navigate('/checkout');
+  };
+
+  const handleIncrease = () => {
+    if (!product) return;
+    const maxStock = Math.min(product.stock, 10);
+    if (cartItem) {
+      if (cartItem.quantity < maxStock) {
+        setQuantity(product._id, cartItem.quantity + 1);
+      } else {
+        notify(`Maximum available quantity is ${maxStock}`, 'info');
+      }
+    } else {
+      setQty((q) => Math.min(maxStock, q + 1));
+    }
+  };
+
+  const handleDecrease = () => {
+    if (!product) return;
+    if (cartItem) {
+      if (cartItem.quantity > 1) {
+        setQuantity(product._id, cartItem.quantity - 1);
+      }
+    } else {
+      setQty((q) => Math.max(1, q - 1));
+    }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!product || !product.inStock) return;
+    const maxStock = Math.min(product.stock, 10);
+
+    if (cartItem && cartItem.quantity >= maxStock) {
+      notify(`Maximum limit reached (${maxStock})`, 'info');
+      return;
+    }
+
+    const btn = e.currentTarget;
+    const originalHTML = btn.innerHTML;
+    btn.classList.add('bg-forest');
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:8px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Added';
+    setTimeout(() => {
+      btn.classList.remove('bg-forest');
+      btn.innerHTML = originalHTML;
+    }, 1000);
+
+    if (cartItem) {
+      trackEvent('added_to_cart', { qty: 1 }, product._id);
+      add(product, 1);
+      notify('Added to cart');
+    } else {
+      trackEvent('added_to_cart', { qty }, product._id);
+      add(product, qty);
+      notify('Added to cart');
+    }
   };
 
   return (
@@ -305,16 +366,18 @@ export default function ProductDetails() {
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <div className="flex items-center rounded-full border border-brown/20">
               <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="grid h-11 w-11 place-items-center rounded-full hover:bg-beige/40"
+                onClick={handleDecrease}
+                disabled={currentQty <= 1}
+                className="grid h-11 w-11 place-items-center rounded-full hover:bg-beige/40 disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="Decrease quantity"
               >
                 <Minus size={16} />
               </button>
-              <span className="w-10 text-center font-medium">{qty}</span>
+              <span className="w-10 text-center font-medium">{currentQty}</span>
               <button
-                onClick={() => setQty((q) => Math.min(product.stock, 10, q + 1))}
-                className="grid h-11 w-11 place-items-center rounded-full hover:bg-beige/40"
+                onClick={handleIncrease}
+                disabled={currentQty >= Math.min(product.stock, 10)}
+                className="grid h-11 w-11 place-items-center rounded-full hover:bg-beige/40 disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="Increase quantity"
               >
                 <Plus size={16} />
@@ -322,19 +385,7 @@ export default function ProductDetails() {
             </div>
 
             <Button
-              onClick={(e) => {
-                const btn = e.currentTarget;
-                const originalHTML = btn.innerHTML;
-                btn.classList.add('bg-forest');
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:8px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Added';
-                setTimeout(() => {
-                  btn.classList.remove('bg-forest');
-                  btn.innerHTML = originalHTML;
-                }, 1000);
-                trackEvent('added_to_cart', { qty }, product._id);
-                add(product, qty);
-                notify('Added to cart');
-              }}
+              onClick={handleAddToCart}
               disabled={!product.inStock}
               size="lg"
               className="transition-colors duration-200"
@@ -345,6 +396,13 @@ export default function ProductDetails() {
               Buy Now
             </Button>
           </div>
+
+          {((product as any).isCustomizable || (product as any).customizable || product.tags?.some((t: string) => t.toLowerCase().includes('custom'))) && (
+            <div className="mt-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-brown-dark dark:text-beige">
+              <p className="font-semibold">✨ Customisable Product</p>
+              <p className="mt-0.5 text-brown/80 dark:text-beige/80">We will contact you for customisation details after your order is placed.</p>
+            </div>
+          )}
 
           <div className="mt-3">
             <Link 

@@ -21,9 +21,55 @@ export function ProductModal() {
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
 
-  const { add } = useCart();
+  const { add, items, setQuantity } = useCart();
   const { has, toggle } = useWishlist();
   const { notify } = useToast();
+
+  const cartItem = items.find((i) => i.product._id === product?._id);
+  const currentQty = cartItem ? cartItem.quantity : qty;
+
+  const handleIncrease = () => {
+    if (!product) return;
+    const maxStock = Math.min(product.stock, 10);
+    if (cartItem) {
+      if (cartItem.quantity < maxStock) {
+        setQuantity(product._id, cartItem.quantity + 1);
+      } else {
+        notify(`Maximum limit reached (${maxStock})`, 'info');
+      }
+    } else {
+      setQty((q) => Math.min(maxStock, q + 1));
+    }
+  };
+
+  const handleDecrease = () => {
+    if (!product) return;
+    if (cartItem) {
+      if (cartItem.quantity > 1) {
+        setQuantity(product._id, cartItem.quantity - 1);
+      }
+    } else {
+      setQty((q) => Math.max(1, q - 1));
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!product || !product.inStock) return;
+    const maxStock = Math.min(product.stock, 10);
+    if (cartItem && cartItem.quantity >= maxStock) {
+      notify(`Maximum limit reached (${maxStock})`, 'info');
+      return;
+    }
+    if (cartItem) {
+      trackEvent('added_to_cart', { qty: 1, source: 'quick_view' }, product._id);
+      add(product, 1);
+      notify('Added to cart');
+    } else {
+      trackEvent('added_to_cart', { qty, source: 'quick_view' }, product._id);
+      add(product, qty);
+      notify('Added to cart');
+    }
+  };
 
   useEffect(() => {
     if (isOpen && productSlug) {
@@ -172,31 +218,35 @@ export function ProductModal() {
                         <span className="font-medium text-brown-dark dark:text-beige">Quantity</span>
                         <div className="flex h-10 w-32 items-center justify-between rounded-full border border-brown/20 px-3 dark:border-beige/20">
                           <button
-                            onClick={() => setQty(Math.max(1, qty - 1))}
-                            className="text-brown hover:text-brown-dark dark:text-beige/70 dark:hover:text-beige"
+                            onClick={handleDecrease}
+                            disabled={currentQty <= 1}
+                            className="text-brown hover:text-brown-dark disabled:opacity-40 disabled:cursor-not-allowed dark:text-beige/70 dark:hover:text-beige"
                           >
                             <Minus size={18} />
                           </button>
-                          <span className="font-medium text-brown-dark dark:text-beige">{qty}</span>
+                          <span className="font-medium text-brown-dark dark:text-beige">{currentQty}</span>
                           <button
-                            onClick={() => setQty(qty + 1)}
-                            className="text-brown hover:text-brown-dark dark:text-beige/70 dark:hover:text-beige"
+                            onClick={handleIncrease}
+                            disabled={currentQty >= Math.min(product.stock, 10)}
+                            className="text-brown hover:text-brown-dark disabled:opacity-40 disabled:cursor-not-allowed dark:text-beige/70 dark:hover:text-beige"
                           >
                             <Plus size={18} />
                           </button>
                         </div>
                       </div>
 
+                      {((product as any).isCustomizable || (product as any).customizable || product.tags?.some((t: string) => t.toLowerCase().includes('custom'))) && (
+                        <div className="mb-4 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-brown-dark dark:text-beige">
+                          <p className="font-semibold">✨ Customisable Product</p>
+                          <p className="mt-0.5 text-brown/80 dark:text-beige/80">We will contact you for customisation details after your order is placed.</p>
+                        </div>
+                      )}
+
                       <div className="flex flex-col sm:flex-row gap-3">
                         <Button
                           className="flex-1"
                           disabled={!product.inStock}
-                          onClick={() => {
-                            trackEvent('added_to_cart', { qty, source: 'quick_view' }, product._id);
-                            add(product, qty);
-                            notify('Added to cart');
-                            closeModal();
-                          }}
+                          onClick={handleAddToCart}
                         >
                           <ShoppingBag size={20} className="mr-2" />
                           {product.inStock ? 'Add to Cart' : 'Out of Stock'}
