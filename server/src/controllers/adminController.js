@@ -181,3 +181,21 @@ export const sendBroadcastEmail = asyncHandler(async (req, res) => {
     message: `Broadcast sent successfully (Emails: ${users.length}, Push: ${pushSubscriptions.length})`,
   });
 });
+
+/** GET /api/admin/marketing/stall-qr-pdf — download/stream high-res printable stall QR PDF. */
+export const downloadStallQrPdf = asyncHandler(async (req, res) => {
+  const { headline, message, stallName, targetUrl, inline } = req.query;
+  const { generateStallQrPdf } = await import('../utils/stallQrPdfGenerator.js');
+
+  await generateStallQrPdf(
+    {
+      headline: headline || undefined,
+      message: message || undefined,
+      stallName: stallName || undefined,
+      targetUrl: targetUrl || undefined,
+      inline: inline === 'true',
+    },
+    res
+  );
+});
+
