@@ -32,6 +32,8 @@ Analyze this product image and generate a structured JSON object containing:
 - "category": Choose the single most appropriate category from: ['crochet', 'bags', 'home-decor', 'accessories', 'amigurumi', 'clothing']. If none fit perfectly, pick the closest one or suggest a simple 1-word lowercase category.
 - "color": The primary dominant color of the product in lowercase (e.g., "red", "beige", "navy blue", "multicolor").
 - "tags": An array of 3 to 6 relevant lowercase tags (e.g., ["handmade", "gift", "boho", "sustainable"]).
+- "includedInBox": An array of items included in the shipment package (e.g., ["2x Handcrafted Crochet Roses", "Care instruction card"]). If decorative props like pots, vases, or stands are visible in the photo, do NOT include them as package contents.
+- "packageNote": If photography/decorative props (like flower pots, vases, trays, stands) are visible in the image, specify a brief note clarifying they are not included (e.g., "Flower pot shown in pictures is for styling only and is not included"). Otherwise, leave empty string "".
 - "socialCaption": An engaging, ready-to-post social media caption for this product including emojis and 3-5 relevant hashtags. You MUST always include the hashtag #manjusatelier. MUST BE STRICTLY UNDER 220 CHARACTERS to fit Twitter limits.
 
 Return ONLY the raw JSON object. Do not include markdown code blocks or any other text.`;

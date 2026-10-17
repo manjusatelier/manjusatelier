@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, X, Upload, Package, Eye, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Upload, Package, Eye, Sparkles, Check } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatPrice, finalPrice, cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
@@ -24,6 +24,8 @@ interface FormState {
   images: string[];
   badges: Badge[];
   featured: boolean;
+  includedInBox: string[];
+  packageNote: string;
   socialCaption?: string;
   postToSocials?: boolean;
   postToInstagram?: boolean;
@@ -44,6 +46,8 @@ const emptyForm: FormState = {
   images: [],
   badges: ['Handmade'],
   featured: false,
+  includedInBox: [],
+  packageNote: '',
   socialCaption: '',
   postToSocials: false,
   postToInstagram: true,
@@ -276,12 +280,30 @@ function ProductForm({
           images: product.images || [],
           badges: product.badges || [],
           featured: !!product.featured,
+          includedInBox: product.includedInBox || [],
+          packageNote: product.packageNote || '',
         }
       : emptyForm
   );
+  const [newItemText, setNewItemText] = useState('');
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const handleAddBoxItem = (text?: string) => {
+    const itemToAdd = (text ?? newItemText).trim();
+    if (!itemToAdd) return;
+    if (!form.includedInBox.includes(itemToAdd)) {
+      set('includedInBox', [...form.includedInBox, itemToAdd]);
+    }
+    setNewItemText('');
+  };
+
+  const handleRemoveBoxItem = (index: number) => {
+    const next = [...form.includedInBox];
+    next.splice(index, 1);
+    set('includedInBox', next);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
@@ -338,7 +360,11 @@ function ProductForm({
           category: prev.category.length ? prev.category : (data.category ? (Array.isArray(data.category) ? data.category : [data.category]) : []),
           color: prev.color || data.color || '',
           socialCaption: prev.socialCaption || data.socialCaption || '',
-          badges: newBadges
+          badges: newBadges,
+          includedInBox: (prev.includedInBox && prev.includedInBox.length > 0)
+            ? prev.includedInBox
+            : (Array.isArray(data.includedInBox) ? data.includedInBox : []),
+          packageNote: prev.packageNote || data.packageNote || '',
         };
       });
       notify('AI Auto-fill complete! Review the suggestions.');
@@ -370,6 +396,8 @@ function ProductForm({
       images: form.images.filter(Boolean),
       badges: form.badges,
       featured: form.featured,
+      includedInBox: form.includedInBox.map((s) => s.trim()).filter(Boolean),
+      packageNote: form.packageNote?.trim() || '',
       ...(form.postToSocials ? {
         postToSocials: true,
         postToInstagram: form.postToInstagram,
@@ -550,6 +578,111 @@ function ProductForm({
           <Field label="Description">
             <textarea rows={3} className="input resize-none" required value={form.description} onChange={(e) => set('description', e.target.value)} />
           </Field>
+
+          {/* What's in the Box Section */}
+          <div className="rounded-xl border border-brown/15 bg-cream/70 p-4 dark:border-beige/15 dark:bg-[#231d17]/60">
+            <div className="flex items-center gap-2">
+              <Package size={18} className="text-gold" />
+              <h3 className="font-serif text-base font-semibold text-brown-dark dark:text-beige">
+                What's in the Box (Package Contents)
+              </h3>
+            </div>
+            <p className="mt-1 text-xs text-brown/60 dark:text-beige/60">
+              List the exact items included in this product's shipment so customers know exactly what to expect.
+            </p>
+
+            {/* Existing Items Chips */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {form.includedInBox.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-brown/20 bg-white px-2.5 py-1 text-xs font-medium text-brown-dark shadow-sm dark:border-beige/20 dark:bg-[#2c241c] dark:text-beige"
+                >
+                  <Check size={12} className="text-forest" />
+                  <span>{item}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveBoxItem(idx)}
+                    className="ml-1 text-brown/40 hover:text-red-500 dark:text-beige/40 dark:hover:text-red-400"
+                    title="Remove item"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              {form.includedInBox.length === 0 && (
+                <span className="text-xs italic text-brown/40 dark:text-beige/40">
+                  No package items specified yet. Use the field below to add items.
+                </span>
+              )}
+            </div>
+
+            {/* Add Item Input */}
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddBoxItem();
+                  }
+                }}
+                placeholder="e.g. 2x Handcrafted Floral Accents with Pearls"
+                className="input flex-1 text-xs sm:text-sm"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => handleAddBoxItem()}
+                disabled={!newItemText.trim()}
+              >
+                <Plus size={14} className="mr-1" /> Add
+              </Button>
+            </div>
+
+            {/* Quick Suggestions */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-brown/60 dark:text-beige/60">
+              <span className="font-medium">Quick add:</span>
+              {[
+                '1x Main Craft Product',
+                'Set of 2 Floral Accents',
+                'Care & Preservation Card',
+                'Atelier Signature Gift Packaging',
+                'Decorative Hanging Dori / Ties',
+              ].map((sugg) => (
+                <button
+                  key={sugg}
+                  type="button"
+                  onClick={() => handleAddBoxItem(sugg)}
+                  className="rounded-md border border-dashed border-brown/25 px-2 py-0.5 transition-colors hover:border-gold hover:bg-gold/10 hover:text-brown-dark dark:border-beige/25 dark:hover:text-beige"
+                >
+                  + {sugg}
+                </button>
+              ))}
+            </div>
+
+            {/* Styling Props & Exclusions Disclaimer Note */}
+            <div className="mt-4 border-t border-brown/10 pt-3 dark:border-beige/10">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-brown-dark dark:text-beige">
+                  Photography Props & Styling Disclaimer (Optional)
+                </span>
+                <input
+                  type="text"
+                  value={form.packageNote || ''}
+                  onChange={(e) => set('packageNote', e.target.value)}
+                  placeholder="e.g. Flower pot / vase shown in pictures is for styling only and is not included."
+                  className="input text-xs sm:text-sm"
+                />
+                <span className="mt-1 block text-[11px] text-brown/50 dark:text-beige/50">
+                  Essential when photos include styling props (such as flower pots, vases, or stands) that are not shipped.
+                </span>
+              </label>
+            </div>
+          </div>
 
           <div>
             <span className="mb-1.5 block text-sm font-medium text-brown-dark dark:text-beige">

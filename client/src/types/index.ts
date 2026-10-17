@@ -33,6 +33,8 @@ export interface Product {
   badges: Badge[];
   featured?: boolean;
   variants?: ProductVariant[];
+  includedInBox?: string[];
+  packageNote?: string;
 }
 
 export interface ProductVariant {

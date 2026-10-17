@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { X, Heart, ShoppingBag, Minus, Plus, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { X, Heart, ShoppingBag, Minus, Plus, ChevronRight, ChevronLeft, Check, Package, Info } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Product, ProductVariant } from '@/types';
 import { cn, formatPrice, finalPrice, categoryName } from '@/lib/utils';
@@ -305,6 +305,35 @@ export function ProductModal() {
                     <p className="mt-6 text-sm leading-relaxed text-brown/70 dark:text-beige/70 line-clamp-4">
                       {product.description}
                     </p>
+
+                    {/* What's in the box */}
+                    {((product.includedInBox && product.includedInBox.length > 0) || product.packageNote) && (
+                      <div className="mt-4 rounded-xl border border-brown/15 bg-cream/40 p-3 text-xs dark:border-beige/15 dark:bg-[#231d17]/50">
+                        <div className="flex items-center gap-1.5 font-semibold text-brown-dark dark:text-beige">
+                          <Package size={14} className="text-gold" />
+                          <span>What's in the box:</span>
+                        </div>
+                        {product.includedInBox && product.includedInBox.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {product.includedInBox.map((item, idx) => (
+                              <li key={idx} className="flex items-center gap-1.5 text-brown/80 dark:text-beige/80">
+                                <Check size={12} className="text-forest shrink-0" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {product.packageNote && (
+                          <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-gold/30 bg-gold/10 p-2 text-[11px] text-brown-dark dark:text-beige">
+                            <Info size={13} className="mt-0.5 shrink-0 text-gold" />
+                            <span>
+                              <strong className="font-semibold">Note: </strong>
+                              {product.packageNote}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="mt-8 border-t border-brown/10 dark:border-beige/10 pt-8">
                       <div className="mb-4 flex items-center justify-between">

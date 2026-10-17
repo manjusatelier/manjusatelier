@@ -13,6 +13,8 @@ const productSchema = new mongoose.Schema(
     dimensions: { type: String, trim: true },
     careInstructions: { type: String, trim: true },
     color: { type: String, trim: true },
+    includedInBox: [{ type: String, trim: true }],
+    packageNote: { type: String, trim: true },
     stock: { type: Number, required: true, default: 0, min: 0 },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0, min: 0 },

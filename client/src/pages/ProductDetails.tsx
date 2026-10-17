@@ -14,6 +14,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Trash2,
+  Package,
+  Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Product, ProductVariant, Review } from '@/types';
@@ -435,6 +437,41 @@ export default function ProductDetails() {
             {product.description}
           </p>
 
+          {/* What's in the Box Section */}
+          {((product.includedInBox && product.includedInBox.length > 0) || product.packageNote) && (
+            <div className="mt-5 rounded-2xl border border-brown/15 bg-cream/50 p-4 dark:border-beige/15 dark:bg-[#231d17]/60">
+              <div className="flex items-center gap-2">
+                <Package size={18} className="text-gold" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-brown-dark dark:text-beige">
+                  What's in the Box
+                </h3>
+              </div>
+
+              {product.includedInBox && product.includedInBox.length > 0 && (
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {product.includedInBox.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-brown/85 dark:text-beige/85">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-forest/15 text-forest">
+                        <Check size={11} strokeWidth={2.5} />
+                      </span>
+                      <span className="font-medium leading-tight">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {product.packageNote && (
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-gold/30 bg-gold/10 p-2.5 text-xs text-brown-dark dark:border-gold/20 dark:text-beige">
+                  <Info size={15} className="mt-0.5 shrink-0 text-gold" />
+                  <p className="leading-snug">
+                    <span className="font-semibold">Note: </span>
+                    {product.packageNote}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stock */}
           <p className="mt-5 text-sm">
             {product.inStock ? (
@@ -592,12 +629,38 @@ export default function ProductDetails() {
         <div className="py-8 text-brown/75 dark:text-beige/75">
           {tab === 'Description' && <p className="max-w-3xl leading-relaxed">{product.description}</p>}
           {tab === 'Details' && (
-            <dl className="grid max-w-xl gap-3 sm:grid-cols-2">
-              <Detail label="Material" value={product.material} />
-              <Detail label="Dimensions" value={product.dimensions} />
-              <Detail label="Color" value={product.color} />
-              <Detail label="Category" value={categoryName(product)} />
-            </dl>
+            <div className="space-y-6">
+              <dl className="grid max-w-xl gap-3 sm:grid-cols-2">
+                <Detail label="Material" value={product.material} />
+                <Detail label="Dimensions" value={product.dimensions} />
+                <Detail label="Color" value={product.color} />
+                <Detail label="Category" value={categoryName(product)} />
+              </dl>
+
+              {((product.includedInBox && product.includedInBox.length > 0) || product.packageNote) && (
+                <div className="max-w-xl border-t border-brown/10 pt-5 dark:border-beige/10">
+                  <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brown-dark dark:text-beige">
+                    <Package size={16} className="text-gold" /> Package Contents (In the Box)
+                  </h4>
+                  {product.includedInBox && product.includedInBox.length > 0 && (
+                    <ul className="mt-3 space-y-2">
+                      {product.includedInBox.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-sm text-brown/80 dark:text-beige/80">
+                          <Check size={14} className="shrink-0 text-forest" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {product.packageNote && (
+                    <p className="mt-3 text-xs text-brown/70 dark:text-beige/70">
+                      <span className="font-semibold">Styling & Props Note: </span>
+                      {product.packageNote}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
           {tab === 'Care' && <p className="max-w-3xl leading-relaxed">{product.careInstructions}</p>}
           {tab === 'Reviews' && (
