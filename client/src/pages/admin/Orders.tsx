@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, Package, CheckCircle2, XCircle, MessageCircle, Eye } from 'lucide-react';
+import {
+  ChevronDown,
+  Package,
+  CheckCircle2,
+  XCircle,
+  MessageCircle,
+  Eye,
+  FileSpreadsheet,
+  Download,
+  Calendar,
+  X,
+  Loader2,
+  Check,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,6 +34,27 @@ interface AdminOrder extends Omit<Order, 'user'> {
     adminNote?: string;
   };
 }
+
+const getIndianFYLabel = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const fyStart = month >= 3 ? year : year - 1;
+  return `FY ${fyStart}-${String(fyStart + 1).slice(-2)}`;
+};
+
+const EXPORT_PRESETS = [
+  { id: 'last_week', label: 'Last Week', desc: 'Last 7 days' },
+  { id: 'last_month', label: 'Last Month', desc: 'Last 30 days' },
+  { id: 'last_3_months', label: 'Last 3 Months', desc: 'Last 90 days' },
+  { id: 'last_6_months', label: 'Last 6 Months', desc: 'Last 180 days' },
+  { id: 'last_12_months', label: 'Last 12 Months', desc: 'Last 365 days / 1 yr' },
+  { id: 'this_financial_year', label: 'This Financial Year', desc: `${getIndianFYLabel()} (Apr 1 – Mar 31)` },
+  { id: 'custom', label: 'Random Dates', desc: 'Pick start & end date' },
+  { id: 'all_time', label: 'All Time', desc: 'Full history of payments' },
+] as const;
+
+type ExportPresetId = typeof EXPORT_PRESETS[number]['id'];
 
 const statuses = ['processing', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const;
 
@@ -151,6 +185,97 @@ export default function Orders() {
     return `https://wa.me/${number}?text=${text}`;
   };
 
+  // Excel Export State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState<ExportPresetId>('last_month');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [successfulOnly, setSuccessfulOnly] = useState(true);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [previewStats, setPreviewStats] = useState<{ count: number; totalRevenue: number; rangeLabel: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Live count preview
+  useEffect(() => {
+    if (!showExportModal) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+
+    const params = new URLSearchParams({
+      range: exportRange,
+      successfulOnly: String(successfulOnly),
+    });
+    if (exportRange === 'custom') {
+      if (customStartDate) params.set('startDate', customStartDate);
+      if (customEndDate) params.set('endDate', customEndDate);
+    }
+
+    api
+      .get<{ count: number; totalRevenue: number; rangeLabel: string }>(`/admin/orders/export-count?${params.toString()}`)
+      .then((res) => {
+        if (!cancelled) setPreviewStats(res);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showExportModal, exportRange, customStartDate, customEndDate, successfulOnly]);
+
+  const handleDownloadExcel = async () => {
+    if (exportRange === 'custom' && !customStartDate && !customEndDate) {
+      notify('Please pick at least a start or end date for custom range', 'error');
+      return;
+    }
+
+    setDownloadingExcel(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        range: exportRange,
+        successfulOnly: String(successfulOnly),
+      });
+      if (exportRange === 'custom') {
+        if (customStartDate) params.set('startDate', customStartDate);
+        if (customEndDate) params.set('endDate', customEndDate);
+      }
+      if (token) params.set('token', token);
+
+      const BASE = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${BASE}/api/admin/orders/export-excel?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate Excel file. Please try again.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.download = `manjus-atelier-successful-orders-${exportRange}-${dateStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      notify('Excel spreadsheet generated and downloaded successfully!', 'success');
+      setShowExportModal(false);
+    } catch (err: unknown) {
+      const error = err as Error;
+      notify(error.message || 'Download failed', 'error');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   return (
     <div>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -160,18 +285,27 @@ export default function Orders() {
             {loading ? 'Loading…' : `${orders.length} order${orders.length === 1 ? '' : 's'}`}
           </p>
         </div>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="rounded-full border border-brown/15 bg-white px-4 py-2 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
-        >
-          <option value="">All statuses</option>
-          {statuses.map((s) => (
-            <option key={s} value={s} className="capitalize">
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="rounded-full border border-brown/15 bg-white px-4 py-2 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
+          >
+            <option value="">All statuses</option>
+            {statuses.map((s) => (
+              <option key={s} value={s} className="capitalize">
+                {s}
+              </option>
+            ))}
+          </select>
+          <Button
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-2 rounded-full border border-[#825028]/30 bg-[#825028] px-4 py-2 text-sm font-medium text-white hover:bg-[#6c401d] shadow-sm transition-all dark:bg-[#C19B6C] dark:text-[#26201a] dark:hover:bg-[#b08b5c]"
+          >
+            <FileSpreadsheet size={16} />
+            <span>Download Excel</span>
+          </Button>
+        </div>
       </header>
 
       {loading ? (
@@ -448,6 +582,187 @@ export default function Orders() {
                 }}
               >
                 Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Excel Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#201a15] border border-brown/10 dark:border-beige/10 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-brown/10 dark:border-beige/10">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-forest/10 text-forest dark:bg-forest/25 dark:text-emerald-400">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-brown-dark dark:text-beige">
+                    Download Successful Orders & Payments
+                  </h3>
+                  <p className="text-xs text-brown/65 dark:text-beige/65 mt-0.5">
+                    Generate an official multi-sheet Excel spreadsheet with order details, itemized breakdown, and audit overview.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="rounded-full p-1.5 text-brown/50 hover:bg-brown/10 dark:text-beige/50 dark:hover:bg-beige/10 transition-colors"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Presets Grid */}
+            <div className="mt-5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-brown/70 dark:text-beige/70 mb-2.5">
+                Select Date Range
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {EXPORT_PRESETS.map((preset) => {
+                  const isSelected = exportRange === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setExportRange(preset.id)}
+                      className={cn(
+                        "flex flex-col items-start p-3 rounded-xl border text-left transition-all relative overflow-hidden",
+                        isSelected
+                          ? "border-[#825028] bg-[#825028]/10 text-brown-dark dark:border-[#C19B6C] dark:bg-[#C19B6C]/15 dark:text-beige shadow-sm"
+                          : "border-brown/15 bg-cream/40 text-brown/80 hover:border-brown/30 hover:bg-cream dark:border-beige/10 dark:bg-[#28211b] dark:text-beige/75 dark:hover:border-beige/30"
+                      )}
+                    >
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#825028] text-white dark:bg-[#C19B6C] dark:text-[#26201a]">
+                          <Check size={10} strokeWidth={3} />
+                        </span>
+                      )}
+                      <span className="font-semibold text-xs leading-tight pr-4">
+                        {preset.label}
+                      </span>
+                      <span className="text-[10px] text-brown/60 dark:text-beige/60 mt-1">
+                        {preset.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Dates Input (Revealed if 'custom' is chosen) */}
+            {exportRange === 'custom' && (
+              <div className="mt-4 p-4 rounded-xl border border-gold/30 bg-gold/5 dark:bg-[#2a221a] dark:border-gold/20 animate-in fade-in">
+                <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-brown-dark dark:text-beige">
+                  <Calendar size={14} className="text-[#825028] dark:text-gold" />
+                  <span>Specify Custom / Random Date Interval</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-brown/70 dark:text-beige/70 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-full rounded-lg border border-brown/20 bg-white px-3 py-2 text-xs outline-none focus:border-[#825028] dark:border-beige/20 dark:bg-[#1f1914] dark:text-beige"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-brown/70 dark:text-beige/70 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-full rounded-lg border border-brown/20 bg-white px-3 py-2 text-xs outline-none focus:border-[#825028] dark:border-beige/20 dark:bg-[#1f1914] dark:text-beige"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Filter Toggle */}
+            <div className="mt-4 p-3.5 rounded-xl border border-brown/10 bg-cream/30 dark:bg-[#261f18] dark:border-beige/10 flex items-center justify-between">
+              <div>
+                <label htmlFor="successful-only" className="text-xs font-semibold text-brown-dark dark:text-beige cursor-pointer flex items-center gap-2">
+                  <span>Only Successful Payments</span>
+                  <span className="rounded-full bg-forest/15 px-2 py-0.5 text-[10px] font-bold text-forest uppercase tracking-wider">
+                    Recommended
+                  </span>
+                </label>
+                <p className="text-[11px] text-brown/60 dark:text-beige/60 mt-0.5">
+                  Filters for verified UPI & successful payments (UTR_VERIFIED & SUCCESSFUL). Uncheck to include all orders.
+                </p>
+              </div>
+              <input
+                id="successful-only"
+                type="checkbox"
+                checked={successfulOnly}
+                onChange={(e) => setSuccessfulOnly(e.target.checked)}
+                className="h-4 w-4 rounded accent-[#825028] cursor-pointer"
+              />
+            </div>
+
+            {/* Live Data Matching Summary */}
+            <div className="mt-4 rounded-xl border border-forest/20 bg-forest/5 p-4 dark:border-emerald-500/20 dark:bg-emerald-950/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-forest dark:text-emerald-400">
+                    Data Summary Preview
+                  </p>
+                  <p className="text-sm font-medium text-brown-dark dark:text-beige mt-0.5">
+                    {previewLoading ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-brown/60 dark:text-beige/60">
+                        <Loader2 className="animate-spin" size={13} />
+                        Calculating matching orders...
+                      </span>
+                    ) : previewStats ? (
+                      <span>
+                        Found <strong className="text-forest dark:text-emerald-400 font-bold">{previewStats.count}</strong> {successfulOnly ? 'successful' : ''} order{previewStats.count === 1 ? '' : 's'} totaling <strong className="text-brown-dark dark:text-beige font-bold">₹{previewStats.totalRevenue.toLocaleString('en-IN')}</strong>
+                      </span>
+                    ) : (
+                      'Ready to export'
+                    )}
+                  </p>
+                </div>
+                <div className="hidden sm:block text-right text-[11px] text-brown/50 dark:text-beige/50">
+                  <p>Includes: Orders, Items & Executive sheets</p>
+                  <p>Format: Microsoft Excel (.xlsx)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-brown/10 dark:border-beige/10">
+              <Button
+                variant="secondary"
+                disabled={downloadingExcel}
+                onClick={() => setShowExportModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={downloadingExcel || (exportRange === 'custom' && !customStartDate && !customEndDate)}
+                onClick={handleDownloadExcel}
+                className="flex items-center gap-2 bg-[#825028] hover:bg-[#6c401d] text-white px-5 dark:bg-[#C19B6C] dark:text-[#26201a] dark:hover:bg-[#b08b5c]"
+              >
+                {downloadingExcel ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    <span>Preparing Spreadsheet...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    <span>Download Excel Sheet</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>

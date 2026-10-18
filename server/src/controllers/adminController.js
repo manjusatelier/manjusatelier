@@ -3,6 +3,7 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import PushSubscription from '../models/PushSubscription.js';
 import { asyncHandler } from '../middleware/error.js';
+import { generateOrdersExcel } from '../utils/orderExcelGenerator.js';
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -198,4 +199,156 @@ export const downloadStallQrPdf = asyncHandler(async (req, res) => {
     res
   );
 });
+
+/**
+ * Resolves date presets into Start and End timestamps.
+ */
+export function resolveOrderDateFilter(range, customStart, customEnd) {
+  const now = new Date();
+  let start = null;
+  let end = new Date(now);
+  let rangeLabel = 'All Time';
+
+  switch (range) {
+    case 'last_week': {
+      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      rangeLabel = 'Last Week (7 Days)';
+      break;
+    }
+    case 'last_month': {
+      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      rangeLabel = 'Last Month (30 Days)';
+      break;
+    }
+    case 'last_3_months': {
+      start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      rangeLabel = 'Last 3 Months (90 Days)';
+      break;
+    }
+    case 'last_6_months': {
+      start = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      rangeLabel = 'Last 6 Months (180 Days)';
+      break;
+    }
+    case 'last_12_months': {
+      start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      rangeLabel = 'Last 12 Months (1 Year)';
+      break;
+    }
+    case 'this_financial_year': {
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth(); // 0 = Jan, 3 = Apr
+      const fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+      const fyEndYear = fyStartYear + 1;
+      start = new Date(fyStartYear, 3, 1, 0, 0, 0, 0); // April 1st
+      end = new Date(fyEndYear, 2, 31, 23, 59, 59, 999); // March 31st
+      rangeLabel = `This Financial Year (FY ${fyStartYear}-${String(fyEndYear).slice(-2)})`;
+      break;
+    }
+    case 'custom': {
+      if (customStart) {
+        start = new Date(customStart);
+        start.setHours(0, 0, 0, 0);
+      }
+      if (customEnd) {
+        end = new Date(customEnd);
+        end.setHours(23, 59, 59, 999);
+      }
+      rangeLabel = `Custom Dates (${customStart || 'Start'} to ${customEnd || 'Present'})`;
+      break;
+    }
+    case 'all_time':
+    default: {
+      start = null;
+      end = null;
+      rangeLabel = 'All Time (Complete History)';
+      break;
+    }
+  }
+
+  return { start, end, rangeLabel };
+}
+
+function buildOrderExportQuery({ range, startDate, endDate, successfulOnly = 'true' }) {
+  const { start, end, rangeLabel } = resolveOrderDateFilter(range, startDate, endDate);
+  const query = {};
+
+  if (successfulOnly !== 'false') {
+    // Default to successful order payments as requested
+    query.paymentStatus = { $in: ['UTR_VERIFIED', 'SUCCESSFUL'] };
+  }
+
+  if (start || end) {
+    query.createdAt = {};
+    if (start) query.createdAt.$gte = start;
+    if (end) query.createdAt.$lte = end;
+  }
+
+  return { query, start, end, rangeLabel };
+}
+
+/**
+ * GET /api/admin/orders/export-excel — download comprehensive Excel spreadsheet of orders.
+ */
+export const exportOrdersExcel = asyncHandler(async (req, res) => {
+  const { range = 'last_month', startDate, endDate, successfulOnly = 'true' } = req.query;
+  const { query, start, end, rangeLabel } = buildOrderExportQuery({
+    range,
+    startDate,
+    endDate,
+    successfulOnly,
+  });
+
+  const orders = await Order.find(query)
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 });
+
+  const dateRangeText = start && end
+    ? `${start.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} to ${end.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+    : start
+    ? `From ${start.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+    : end
+    ? `Up to ${end.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+    : 'All Time History';
+
+  await generateOrdersExcel(
+    orders,
+    {
+      rangeKey: range,
+      rangeLabel,
+      dateRangeText,
+      adminName: req.user?.name || 'Administrator',
+    },
+    res
+  );
+});
+
+/**
+ * GET /api/admin/orders/export-count — preview matching count and revenue for selected date filter.
+ */
+export const getExportOrdersCount = asyncHandler(async (req, res) => {
+  const { range = 'last_month', startDate, endDate, successfulOnly = 'true' } = req.query;
+  const { query, rangeLabel } = buildOrderExportQuery({
+    range,
+    startDate,
+    endDate,
+    successfulOnly,
+  });
+
+  const [count, revenueAgg] = await Promise.all([
+    Order.countDocuments(query),
+    Order.aggregate([
+      { $match: query },
+      { $group: { _id: null, total: { $sum: '$total' } } },
+    ]),
+  ]);
+
+  res.json({
+    success: true,
+    count,
+    totalRevenue: revenueAgg[0]?.total || 0,
+    rangeLabel,
+  });
+});
+
 
