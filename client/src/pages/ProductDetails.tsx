@@ -82,6 +82,26 @@ export default function ProductDetails() {
     url: typeof window !== 'undefined' ? window.location.href : undefined,
   });
 
+  // Scroll to top immediately when slug changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    const container = document.getElementById('product-carousel');
+    if (container) {
+      container.scrollTo({ left: 0, behavior: 'instant' });
+    }
+  }, [slug]);
+
+  // Ensure page is at the top once product details have finished loading and rendering
+  useEffect(() => {
+    if (!loading && product) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, product?._id]);
+
   useEffect(() => {
     setLoading(true);
     setActiveImg(0);
@@ -271,29 +291,7 @@ export default function ProductDetails() {
               ))}
             </div>
 
-            {/* Average Rating & Reviewer Count on Top-Right Corner */}
-            {product.reviewCount > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  const el = document.getElementById('customer-reviews');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brown/15 bg-white/95 px-2.5 py-1 shadow-md backdrop-blur-md transition-all hover:bg-white hover:shadow-lg hover:scale-105 active:scale-95 dark:border-beige/20 dark:bg-[#1f1914]/95 dark:hover:bg-[#1f1914]"
-                aria-label={`View ${product.reviewCount} customer reviews, rated ${product.rating.toFixed(1)} out of 5`}
-              >
-                <span className="font-semibold text-xs text-brown-dark dark:text-beige">
-                  {product.rating.toFixed(1)}
-                </span>
-                <Rating
-                  value={product.rating}
-                  size={13}
-                />
-                <span className="text-[11px] font-medium text-brown/65 dark:text-beige/65">
-                  ({product.reviewCount})
-                </span>
-              </button>
-            )}
+
 
             {/* Navigation Arrows */}
             {product.images.length > 1 && (
