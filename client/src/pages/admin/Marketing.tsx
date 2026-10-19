@@ -267,7 +267,7 @@ export default function Marketing() {
           <div class="flyer-container">
             <div class="inner-frame">
               <div class="brand-title">M A N J U ' S &nbsp; A T E L I E R</div>
-              <div class="brand-subtitle">Handcrafted with Love &bull; Pure Indian Artistry</div>
+              <div class="brand-subtitle">Handcrafted with Love &bull; Pure Artistry</div>
               <div class="divider"></div>
 
               ${qrConfig.stallName ? `<div class="stall-badge">[ ${qrConfig.stallName.toUpperCase()} ]</div>` : ''}
@@ -276,15 +276,12 @@ export default function Marketing() {
               <p class="message">${qrConfig.message}</p>
 
               <div class="qr-card">
-                <div class="qr-tag">&#9733; SCAN TO REVIEW & GET FEATURED &#9733;</div>
+                <div class="qr-tag">&#9733; SCAN WITH PHONE CAMERA &#9733;</div>
                 <img src="${qrImageSrc}" alt="Review QR Code" class="qr-img" />
-                <div class="scan-hint">Point your smartphone camera to scan</div>
                 <div class="url-hint">manjusatelier.in/offline-review</div>
               </div>
 
-              <div class="social-highlight">Share photos of your craft to get featured on our Instagram!</div>
-              <div class="social-info">Instagram: @manjusatelier &nbsp;|&nbsp; Website: www.manjusatelier.in</div>
-              <div class="thank-you">Thank You for Supporting Local & Handmade Artistry!</div>
+              <div class="social-highlight">Tag us on Instagram: @manjusatelier</div>
             </div>
           </div>
           <script>
