@@ -272,27 +272,28 @@ export default function ProductDetails() {
             </div>
 
             {/* Average Rating & Reviewer Count on Top-Right Corner */}
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('customer-reviews');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brown/15 bg-white/95 px-2.5 py-1 shadow-md backdrop-blur-md transition-all hover:bg-white hover:shadow-lg hover:scale-105 active:scale-95 dark:border-beige/20 dark:bg-[#1f1914]/95 dark:hover:bg-[#1f1914]"
-              aria-label={`View ${product.reviewCount || 0} customer reviews, rated ${product.rating > 0 ? product.rating.toFixed(1) : '0.0'} out of 5`}
-            >
-              <span className="font-semibold text-xs text-brown-dark dark:text-beige">
-                {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
-              </span>
-              <Rating
-                value={product.rating}
-                size={13}
-                showZeroCount
-              />
-              <span className="text-[11px] font-medium text-brown/65 dark:text-beige/65">
-                ({product.reviewCount || 0})
-              </span>
-            </button>
+            {product.reviewCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('customer-reviews');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brown/15 bg-white/95 px-2.5 py-1 shadow-md backdrop-blur-md transition-all hover:bg-white hover:shadow-lg hover:scale-105 active:scale-95 dark:border-beige/20 dark:bg-[#1f1914]/95 dark:hover:bg-[#1f1914]"
+                aria-label={`View ${product.reviewCount} customer reviews, rated ${product.rating.toFixed(1)} out of 5`}
+              >
+                <span className="font-semibold text-xs text-brown-dark dark:text-beige">
+                  {product.rating.toFixed(1)}
+                </span>
+                <Rating
+                  value={product.rating}
+                  size={13}
+                />
+                <span className="text-[11px] font-medium text-brown/65 dark:text-beige/65">
+                  ({product.reviewCount})
+                </span>
+              </button>
+            )}
 
             {/* Navigation Arrows */}
             {product.images.length > 1 && (
@@ -370,25 +371,27 @@ export default function ProductDetails() {
           <h1 className="mt-2 font-serif text-4xl text-brown-dark dark:text-beige">
             {product.name}
           </h1>
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('customer-reviews');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="group flex items-center gap-2 hover:opacity-80 transition-opacity"
-              title="Jump to reviews"
-            >
-              <span className="font-semibold text-sm text-brown-dark dark:text-beige">
-                {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
-              </span>
-              <Rating value={product.rating} size={15} showZeroCount />
-              <span className="text-xs text-brown/60 dark:text-beige/60 underline decoration-brown/30 group-hover:decoration-brown">
-                {product.reviewCount === 1 ? '1 review' : `${product.reviewCount || 0} reviews`}
-              </span>
-            </button>
-          </div>
+          {product.reviewCount > 0 && (
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('customer-reviews');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="group flex items-center gap-2 hover:opacity-80 transition-opacity"
+                title="Jump to reviews"
+              >
+                <span className="font-semibold text-sm text-brown-dark dark:text-beige">
+                  {product.rating.toFixed(1)}
+                </span>
+                <Rating value={product.rating} size={15} />
+                <span className="text-xs text-brown/60 dark:text-beige/60 underline decoration-brown/30 group-hover:decoration-brown">
+                  {product.reviewCount === 1 ? '1 review' : `${product.reviewCount} reviews`}
+                </span>
+              </button>
+            </div>
+          )}
 
           <div className="mt-5 flex items-baseline gap-3">
             <span className="text-3xl font-semibold text-brown-dark dark:text-beige">
@@ -717,21 +720,23 @@ export default function ProductDetails() {
             </h2>
             <p className="mt-1 text-sm text-brown/60 dark:text-beige/60">
               {reviews.length === 0
-                ? 'No reviews yet — be the first to share your thoughts!'
+                ? 'Be the first one to review this product'
                 : `Verified customer feedback (${reviews.length} total)`}
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-brown/10 bg-white/60 p-3 px-4 shadow-sm backdrop-blur-sm dark:border-beige/10 dark:bg-[#201a15]">
-            <span className="font-serif text-3xl font-bold text-brown-dark dark:text-beige">
-              {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
-            </span>
-            <div className="flex flex-col">
-              <Rating value={product.rating} size={15} showZeroCount />
-              <span className="text-xs text-brown/50 dark:text-beige/50">
-                Based on {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
+          {product.reviewCount > 0 && (
+            <div className="flex items-center gap-3 rounded-2xl border border-brown/10 bg-white/60 p-3 px-4 shadow-sm backdrop-blur-sm dark:border-beige/10 dark:bg-[#201a15]">
+              <span className="font-serif text-3xl font-bold text-brown-dark dark:text-beige">
+                {product.rating.toFixed(1)}
               </span>
+              <div className="flex flex-col">
+                <Rating value={product.rating} size={15} />
+                <span className="text-xs text-brown/50 dark:text-beige/50">
+                  Based on {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <ReviewsTab
@@ -950,6 +955,83 @@ function ReviewsTab({
 
   const displayedReviews = reviews.slice(0, visibleCount);
 
+  if (reviews.length === 0) {
+    return (
+      <div className="card-surface mx-auto max-w-2xl rounded-3xl border border-brown/15 p-8 text-center shadow-sm sm:p-10 dark:border-beige/15">
+        <h3 className="font-serif text-2xl text-brown-dark dark:text-beige">
+          Be the first one to review this product
+        </h3>
+        <p className="mx-auto mt-2 max-w-md text-sm text-brown/60 dark:text-beige/60">
+          Share your experience with this handcrafted creation to help others make the right choice.
+        </p>
+
+        <div className="mt-8 border-t border-brown/10 pt-6 text-left dark:border-beige/10">
+          {canReview ? (
+            <form onSubmit={submit} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-brown-dark dark:text-beige">
+                  Your Rating
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setRating(i)}
+                      className="transition-transform hover:scale-110 focus:outline-none"
+                      aria-label={`${i} stars`}
+                    >
+                      <Star
+                        size={26}
+                        className={cn(
+                          'shrink-0 transition-colors',
+                          i <= rating
+                            ? 'fill-gold text-gold hover:fill-gold/80 hover:text-gold/80'
+                            : 'text-brown/20 hover:text-brown/40 dark:text-beige/25'
+                        )}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-medium text-brown/70 dark:text-beige/70">
+                    {rating === 5 ? '5.0 - Excellent' : `${rating}.0`}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-brown-dark dark:text-beige">
+                  Your Review
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your thoughts about this product…"
+                  rows={4}
+                  className="w-full max-w-full rounded-2xl border border-brown/15 bg-white p-3.5 text-sm outline-none focus:border-brown dark:border-beige/15 dark:bg-[#26201a] dark:text-beige"
+                />
+              </div>
+
+              <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
+                {submitting ? 'Submitting…' : 'Submit Review'}
+              </Button>
+            </form>
+          ) : (
+            <div className="py-4 text-center">
+              <p className="mb-4 text-sm text-brown/70 dark:text-beige/70">
+                Log in to be the first to share your thoughts on this product.
+              </p>
+              <Link to="/login">
+                <Button variant="secondary" size="sm" className="rounded-full px-6">
+                  Log in to review
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
       <div>
@@ -957,7 +1039,7 @@ function ReviewsTab({
           <p className="font-serif text-5xl text-brown-dark dark:text-beige">
             {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
           </p>
-          <Rating value={product.rating} className="mt-2 justify-center" size={18} showZeroCount />
+          <Rating value={product.rating} className="mt-2 justify-center" size={18} />
           <p className="mt-2 text-sm text-brown/50 dark:text-beige/50">
             Based on {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
           </p>
@@ -1012,16 +1094,7 @@ function ReviewsTab({
       </div>
 
       <div className="space-y-4">
-        {reviews.length === 0 ? (
-          <div className="card-surface p-8 text-center">
-            <p className="text-base font-serif text-brown-dark dark:text-beige">No reviews yet</p>
-            <p className="mt-1 text-sm text-brown/50 dark:text-beige/50">
-              Be the first to share your thoughts about this handcrafted item!
-            </p>
-          </div>
-        ) : (
-          <>
-            {displayedReviews.map((r) => (
+        {displayedReviews.map((r) => (
               <div key={r._id} className="card-surface p-5 relative overflow-hidden">
                 <div className="flex items-center justify-between gap-3">
                   <p className="min-w-0 flex-1 truncate font-medium text-brown-dark dark:text-beige">{r.name}</p>
@@ -1094,8 +1167,6 @@ function ReviewsTab({
                 )}
               </div>
             )}
-          </>
-        )}
       </div>
     </div>
   );

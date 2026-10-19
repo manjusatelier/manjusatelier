@@ -30,9 +30,10 @@ export function Rating({
   className,
   showZeroCount = false,
 }: RatingProps) {
-  if (count === 0 && !showZeroCount) return null;
-
   const validRating = Math.max(0, Math.min(5, Number(value) || 0));
+  if (!showZeroCount && (count === 0 || (count === undefined && validRating === 0))) {
+    return null;
+  }
 
   return (
     <div
