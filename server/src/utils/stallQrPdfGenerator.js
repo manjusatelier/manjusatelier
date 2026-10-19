@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
 /**
  * Generates a high-resolution, print-ready A4 PDF standee flyer for offline stalls
@@ -144,12 +145,16 @@ export async function generateStallQrPdf(options = {}, res) {
       characterSpacing: 0.8,
     });
 
-  // Fetch QR Code image as PNG buffer
+  // Generate QR Code image as PNG buffer (locally via 'qrcode', with external API fallback)
   try {
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&format=png&margin=10&data=${encodeURIComponent(targetUrl)}`;
-    const qrResponse = await fetch(qrApiUrl);
-    if (!qrResponse.ok) throw new Error('Failed to fetch QR image');
-    const qrBuffer = Buffer.from(await qrResponse.arrayBuffer());
+    const qrBuffer = await QRCode.toBuffer(targetUrl, {
+      width: 600,
+      margin: 1,
+      color: {
+        dark: '#2d2015',
+        light: '#ffffff',
+      },
+    });
 
     const qrImgSize = 180;
     doc.image(qrBuffer, qrCardX + (qrCardWidth - qrImgSize) / 2, qrCardY + 34, {
@@ -157,12 +162,26 @@ export async function generateStallQrPdf(options = {}, res) {
       height: qrImgSize,
     });
   } catch (err) {
-    console.error('Failed to embed QR image in PDF:', err);
-    doc
-      .fillColor(darkBrown)
-      .fontSize(10)
-      .font('Helvetica-Bold')
-      .text('QR Code Placeholder', qrCardX, qrCardY + 100, { width: qrCardWidth, align: 'center' });
+    console.error('Local QR buffer failed, trying fallback API:', err);
+    try {
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&format=png&margin=10&data=${encodeURIComponent(targetUrl)}`;
+      const qrResponse = await fetch(qrApiUrl);
+      if (!qrResponse.ok) throw new Error('Failed to fetch QR image');
+      const qrBuffer = Buffer.from(await qrResponse.arrayBuffer());
+
+      const qrImgSize = 180;
+      doc.image(qrBuffer, qrCardX + (qrCardWidth - qrImgSize) / 2, qrCardY + 34, {
+        width: qrImgSize,
+        height: qrImgSize,
+      });
+    } catch (fallbackErr) {
+      console.error('Failed to embed QR image in PDF:', fallbackErr);
+      doc
+        .fillColor(darkBrown)
+        .fontSize(10)
+        .font('Helvetica-Bold')
+        .text('Scan for Offline Review', qrCardX, qrCardY + 100, { width: qrCardWidth, align: 'center' });
+    }
   }
 
   // Camera instruction text inside card

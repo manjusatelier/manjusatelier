@@ -47,12 +47,21 @@ export default function Marketing() {
       });
       if (token) params.set('token', token);
 
-      const response = await fetch(`/api/admin/marketing/stall-qr-pdf?${params.toString()}`, {
+      const BASE = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${BASE}/api/admin/marketing/stall-qr-pdf?${params.toString()}`, {
+        credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate PDF. Please try again.');
+        let errorMsg = 'Failed to generate PDF. Please try again.';
+        try {
+          const errData = await response.json();
+          if (errData?.message) errorMsg = errData.message;
+        } catch {
+          // Response is not JSON
+        }
+        throw new Error(errorMsg);
       }
 
       const blob = await response.blob();
