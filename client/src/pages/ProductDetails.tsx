@@ -16,6 +16,7 @@ import {
   Trash2,
   Package,
   Info,
+  Star,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Product, ProductVariant, Review } from '@/types';
@@ -34,7 +35,7 @@ import { RecentlyViewed } from '@/components/product/RecentlyViewed';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { trackEvent } from '@/lib/analytics';
 
-const tabs = ['Description', 'Details', 'Care', 'Reviews'] as const;
+const tabs = ['Description', 'Details', 'Care'] as const;
 type Tab = (typeof tabs)[number];
 
 function getVariantLabel(variant: { name: string; color?: string }): string {
@@ -270,6 +271,29 @@ export default function ProductDetails() {
               ))}
             </div>
 
+            {/* Average Rating & Reviewer Count on Top-Right Corner */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('customer-reviews');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brown/15 bg-white/95 px-2.5 py-1 shadow-md backdrop-blur-md transition-all hover:bg-white hover:shadow-lg hover:scale-105 active:scale-95 dark:border-beige/20 dark:bg-[#1f1914]/95 dark:hover:bg-[#1f1914]"
+              aria-label={`View ${product.reviewCount || 0} customer reviews, rated ${product.rating > 0 ? product.rating.toFixed(1) : '0.0'} out of 5`}
+            >
+              <span className="font-semibold text-xs text-brown-dark dark:text-beige">
+                {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
+              </span>
+              <Rating
+                value={product.rating}
+                size={13}
+                showZeroCount
+              />
+              <span className="text-[11px] font-medium text-brown/65 dark:text-beige/65">
+                ({product.reviewCount || 0})
+              </span>
+            </button>
+
             {/* Navigation Arrows */}
             {product.images.length > 1 && (
               <>
@@ -347,7 +371,23 @@ export default function ProductDetails() {
             {product.name}
           </h1>
           <div className="mt-3 flex items-center gap-3">
-            <Rating value={product.rating} count={product.reviewCount} size={16} />
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('customer-reviews');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="group flex items-center gap-2 hover:opacity-80 transition-opacity"
+              title="Jump to reviews"
+            >
+              <span className="font-semibold text-sm text-brown-dark dark:text-beige">
+                {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
+              </span>
+              <Rating value={product.rating} size={15} showZeroCount />
+              <span className="text-xs text-brown/60 dark:text-beige/60 underline decoration-brown/30 group-hover:decoration-brown">
+                {product.reviewCount === 1 ? '1 review' : `${product.reviewCount || 0} reviews`}
+              </span>
+            </button>
           </div>
 
           <div className="mt-5 flex items-baseline gap-3">
@@ -615,7 +655,6 @@ export default function ProductDetails() {
               )}
             >
               {t}
-              {t === 'Reviews' && ` (${reviews.length})`}
               {tab === t && (
                 <motion.span
                   layoutId="tab-underline"
@@ -663,26 +702,60 @@ export default function ProductDetails() {
             </div>
           )}
           {tab === 'Care' && <p className="max-w-3xl leading-relaxed">{product.careInstructions}</p>}
-          {tab === 'Reviews' && (
-            <ReviewsTab
-              product={product}
-              reviews={reviews}
-              canReview={!!user}
-              user={user}
-              onAdded={(r) => {
-                setReviews((prev) => [r, ...prev]);
-                if (r.status === 'approved') {
-                  setProduct((p) => (p ? { ...p, reviewCount: p.reviewCount + 1 } : p));
-                }
-              }}
-              onDeleted={(id) => {
-                setReviews((prev) => prev.filter(r => r._id !== id));
-                setProduct((p) => (p ? { ...p, reviewCount: Math.max(0, p.reviewCount - 1) } : p));
-              }}
-            />
-          )}
         </div>
       </div>
+
+      {/* Customer Reviews Section - Shown by default beneath product and product details */}
+      <section
+        id="customer-reviews"
+        className="mt-12 border-t border-brown/10 pt-12 dark:border-beige/10 scroll-mt-24"
+      >
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl sm:text-3xl text-brown-dark dark:text-beige">
+              Customer Reviews
+            </h2>
+            <p className="mt-1 text-sm text-brown/60 dark:text-beige/60">
+              {reviews.length === 0
+                ? 'No reviews yet — be the first to share your thoughts!'
+                : `Verified customer feedback (${reviews.length} total)`}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl border border-brown/10 bg-white/60 p-3 px-4 shadow-sm backdrop-blur-sm dark:border-beige/10 dark:bg-[#201a15]">
+            <span className="font-serif text-3xl font-bold text-brown-dark dark:text-beige">
+              {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
+            </span>
+            <div className="flex flex-col">
+              <Rating value={product.rating} size={15} showZeroCount />
+              <span className="text-xs text-brown/50 dark:text-beige/50">
+                Based on {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <ReviewsTab
+          product={product}
+          reviews={reviews}
+          canReview={!!user}
+          user={user}
+          onAdded={(r) => {
+            setReviews((prev) => [r, ...prev]);
+            if (r.status === 'approved') {
+              setProduct((p) => {
+                if (!p) return p;
+                const newCount = p.reviewCount + 1;
+                const newRating = Math.round(((p.rating * p.reviewCount + r.rating) / newCount) * 10) / 10;
+                return { ...p, reviewCount: newCount, rating: newRating };
+              });
+            }
+          }}
+          onDeleted={(id) => {
+            setReviews((prev) => prev.filter((r) => r._id !== id));
+            setProduct((p) => (p ? { ...p, reviewCount: Math.max(0, p.reviewCount - 1) } : p));
+          }}
+        />
+      </section>
 
       {/* Related */}
       {related.length > 0 && (
@@ -854,6 +927,7 @@ function ReviewsTab({
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(3);
   const { notify } = useToast();
 
   const submit = async (e: React.FormEvent) => {
@@ -874,45 +948,62 @@ function ReviewsTab({
     }
   };
 
+  const displayedReviews = reviews.slice(0, visibleCount);
+
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
+    <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
       <div>
         <div className="card-surface p-6 text-center">
           <p className="font-serif text-5xl text-brown-dark dark:text-beige">
-            {product.rating.toFixed(1)}
+            {product.rating > 0 ? product.rating.toFixed(1) : '0.0'}
           </p>
-          <Rating value={product.rating} className="mt-2 justify-center" size={18} />
+          <Rating value={product.rating} className="mt-2 justify-center" size={18} showZeroCount />
           <p className="mt-2 text-sm text-brown/50 dark:text-beige/50">
-            Based on {product.reviewCount} reviews
+            Based on {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
           </p>
         </div>
 
         {canReview ? (
           <form onSubmit={submit} className="mt-6 space-y-3">
             <p className="font-medium text-brown-dark dark:text-beige">Write a review</p>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1.5">
               {[1, 2, 3, 4, 5].map((i) => (
-                <button key={i} type="button" onClick={() => setRating(i)} aria-label={`${i} stars`}>
-                  <span className={cn('text-2xl', i <= rating ? 'text-gold' : 'text-brown/25')}>
-                    ★
-                  </span>
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setRating(i)}
+                  className="focus:outline-none transition-transform hover:scale-110"
+                  aria-label={`${i} stars`}
+                >
+                  <Star
+                    size={24}
+                    className={cn(
+                      'transition-colors shrink-0',
+                      i <= rating
+                        ? 'fill-gold text-gold hover:fill-gold/80 hover:text-gold/80'
+                        : 'text-brown/20 dark:text-beige/25 hover:text-brown/40'
+                    )}
+                  />
                 </button>
               ))}
+              <span className="ml-2 text-xs font-medium text-brown/60 dark:text-beige/60">
+                {rating === 5 ? '5.0 - Excellent' : `${rating}.0`}
+              </span>
             </div>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your thoughts…"
               rows={3}
-              className="w-full rounded-xl border border-brown/15 bg-white p-3 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
+              className="w-full max-w-full rounded-xl border border-brown/15 bg-white p-3 text-sm outline-none focus:border-brown dark:bg-[#26201a] dark:border-beige/15 dark:text-beige"
             />
             <Button type="submit" disabled={submitting} size="sm">
               {submitting ? 'Submitting…' : 'Submit review'}
             </Button>
           </form>
         ) : (
-          <p className="mt-6 rounded-xl bg-beige/40 p-4 text-sm text-brown/70 dark:bg-beige/10">
-            <Link to="/login" className="font-medium text-brown underline">
+          <p className="mt-6 rounded-xl bg-beige/40 p-4 text-sm text-brown/70 dark:bg-beige/10 dark:text-beige/70">
+            <Link to="/login" className="font-medium text-brown dark:text-gold underline">
               Log in
             </Link>{' '}
             to write a review.
@@ -922,52 +1013,88 @@ function ReviewsTab({
 
       <div className="space-y-4">
         {reviews.length === 0 ? (
-          <p className="text-sm text-brown/50 dark:text-beige/50">
-            No reviews yet — be the first to share!
-          </p>
+          <div className="card-surface p-8 text-center">
+            <p className="text-base font-serif text-brown-dark dark:text-beige">No reviews yet</p>
+            <p className="mt-1 text-sm text-brown/50 dark:text-beige/50">
+              Be the first to share your thoughts about this handcrafted item!
+            </p>
+          </div>
         ) : (
-          reviews.map((r) => (
-            <div key={r._id} className="card-surface p-5 relative overflow-hidden">
-              <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 flex-1 truncate font-medium text-brown-dark dark:text-beige">{r.name}</p>
-                <div className="flex shrink-0 items-center gap-4">
-                  <Rating value={r.rating} />
-                  {user?.role === 'admin' && (
-                    <button
-                      onClick={async () => {
-                        if (confirm('Are you sure you want to delete this review?')) {
-                          try {
-                            await api.delete(`/reviews/${r._id}`);
-                            notify('Review deleted');
-                            onDeleted(r._id);
-                          } catch (err) {
-                            notify('Failed to delete review', 'error');
+          <>
+            {displayedReviews.map((r) => (
+              <div key={r._id} className="card-surface p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 flex-1 truncate font-medium text-brown-dark dark:text-beige">{r.name}</p>
+                  <div className="flex shrink-0 items-center gap-4">
+                    <Rating value={r.rating} />
+                    {user?.role === 'admin' && (
+                      <button
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to delete this review?')) {
+                            try {
+                              await api.delete(`/reviews/${r._id}`);
+                              notify('Review deleted');
+                              onDeleted(r._id);
+                            } catch (err) {
+                              notify('Failed to delete review', 'error');
+                            }
                           }
-                        }
-                      }}
-                      className="text-red-500 hover:text-red-600 transition-colors"
-                      title="Delete Review"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
+                        }}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                        title="Delete Review"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {r.comment && (
+                  <p className="mt-2 text-sm text-brown/70 dark:text-beige/70 break-words whitespace-pre-wrap">{r.comment}</p>
+                )}
+                {r.image && (
+                  <div className="mt-3">
+                    <a href={r.image} target="_blank" rel="noopener noreferrer">
+                      <img src={r.image} alt="Review attachment" className="h-24 w-24 rounded-lg object-cover hover:opacity-80 transition-opacity" />
+                    </a>
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-brown/40 dark:text-beige/40">
+                  {formatDate(r.createdAt)}
+                </p>
               </div>
-              {r.comment && (
-                <p className="mt-2 text-sm text-brown/70 dark:text-beige/70 break-words whitespace-pre-wrap">{r.comment}</p>
-              )}
-              {r.image && (
-                <div className="mt-3">
-                  <a href={r.image} target="_blank" rel="noopener noreferrer">
-                    <img src={r.image} alt="Review attachment" className="h-24 w-24 rounded-lg object-cover hover:opacity-80 transition-opacity" />
-                  </a>
-                </div>
-              )}
-              <p className="mt-2 text-xs text-brown/40">
-                {formatDate(r.createdAt)}
-              </p>
-            </div>
-          ))
+            ))}
+
+            {reviews.length > 3 && (
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                {visibleCount < reviews.length ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setVisibleCount((prev) => Math.min(prev + 3, reviews.length))}
+                    className="w-full sm:w-auto rounded-full px-6 py-2.5 text-sm font-medium border border-brown/20 bg-cream/40 text-brown-dark hover:bg-cream dark:border-beige/20 dark:bg-[#201a15] dark:text-beige dark:hover:bg-[#2a221a]"
+                  >
+                    Show More Reviews ({reviews.length - visibleCount} remaining)
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setVisibleCount(3)}
+                    className="w-full sm:w-auto rounded-full px-6 py-2.5 text-sm font-medium border border-brown/20 bg-cream/40 text-brown-dark hover:bg-cream dark:border-beige/20 dark:bg-[#201a15] dark:text-beige dark:hover:bg-[#2a221a]"
+                  >
+                    Show Less (collapse to 3)
+                  </Button>
+                )}
+                {visibleCount < reviews.length && reviews.length > 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(reviews.length)}
+                    className="text-xs font-medium text-brown/70 underline hover:text-brown dark:text-beige/70 dark:hover:text-beige"
+                  >
+                    Show all {reviews.length} reviews
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

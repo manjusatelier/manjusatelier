@@ -6,23 +6,69 @@ interface RatingProps {
   count?: number;
   size?: number;
   className?: string;
+  showZeroCount?: boolean;
 }
 
-export function Rating({ value, count, size = 14, className }: RatingProps) {
-  if (count === 0) return null;
-  
+/**
+ * Calculates fill percentage (0, 50, or 100) for a given star (1..5)
+ * matching Amazon's rating representation:
+ * - Difference >= 0.75: Full Star (100%)
+ * - Difference between 0.25 and 0.75: Half Star (50%)
+ * - Difference < 0.25: Empty Star (0%)
+ */
+export function getStarFillPercentage(starIndex: number, rating: number): number {
+  const diff = rating - (starIndex - 1);
+  if (diff <= 0.2) return 0;
+  if (diff >= 0.75) return 100;
+  return 50; // Half-filled star for ratings with fractional ~0.5 (e.g. 4.3 - 4.7)
+}
+
+export function Rating({
+  value,
+  count,
+  size = 14,
+  className,
+  showZeroCount = false,
+}: RatingProps) {
+  if (count === 0 && !showZeroCount) return null;
+
+  const validRating = Math.max(0, Math.min(5, Number(value) || 0));
+
   return (
-    <div className={cn('flex items-center gap-1', className)} aria-label={`Rated ${value} out of 5`}>
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Star
-            key={i}
-            size={size}
-            className={cn(
-              i <= Math.round(value) ? 'fill-gold text-gold' : 'text-brown/25'
-            )}
-          />
-        ))}
+    <div
+      className={cn('inline-flex items-center gap-1.5', className)}
+      aria-label={`Rated ${validRating.toFixed(1)} out of 5`}
+    >
+      <div className="flex items-center gap-0.5" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((i) => {
+          const fill = getStarFillPercentage(i, validRating);
+          return (
+            <div
+              key={i}
+              className="relative inline-flex items-center justify-center shrink-0"
+              style={{ width: size, height: size }}
+            >
+              {/* Empty background star */}
+              <Star
+                size={size}
+                className="text-brown/25 dark:text-beige/30 shrink-0"
+              />
+
+              {/* Filled foreground star clipped to fill percentage */}
+              {fill > 0 && (
+                <div
+                  className="absolute left-0 top-0 overflow-hidden flex items-center"
+                  style={{ width: `${fill}%`, height: size }}
+                >
+                  <Star
+                    size={size}
+                    className="fill-gold text-gold shrink-0"
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {count !== undefined && (
         <span className="text-xs text-brown/60 dark:text-beige/60">({count})</span>
@@ -30,3 +76,4 @@ export function Rating({ value, count, size = 14, className }: RatingProps) {
     </div>
   );
 }
+
