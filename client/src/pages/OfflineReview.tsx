@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import { Star, CheckCircle, ChevronDown } from 'lucide-react';
@@ -20,9 +20,11 @@ export default function OfflineReview() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const selectedProduct = products.find(p => p._id === formData.productId);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredProducts = products.filter(p => {
+  const selectedProduct = products.find((p) => p._id === formData.productId);
+
+  const filteredProducts = products.filter((p) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -48,6 +50,19 @@ export default function OfflineReview() {
       }
     }
     fetchProducts();
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleChange = (
@@ -91,22 +106,24 @@ export default function OfflineReview() {
   };
 
   return (
-    <div className="container-x py-16">
+    <div className="container-x py-12 md:py-16">
       <div className="mx-auto max-w-xl text-center">
-        <h1 className="font-serif text-4xl text-brown-dark md:text-5xl">Leave a Review</h1>
-        <p className="mx-auto mt-4 max-w-lg text-brown/80 text-lg">
+        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-brown-dark dark:text-beige break-words">
+          Leave a Review
+        </h1>
+        <p className="mx-auto mt-3 max-w-lg text-base sm:text-lg text-brown/80 dark:text-beige/80 break-words">
           Did you buy something from our offline stall? We'd love to hear your feedback!
         </p>
       </div>
 
-      <div className="mx-auto mt-12 max-w-2xl rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+      <div className="mx-auto mt-8 sm:mt-12 max-w-2xl overflow-hidden rounded-2xl bg-white p-5 sm:p-8 shadow-sm ring-1 ring-black/5 dark:bg-[#241e18] dark:ring-beige/15">
         {status === 'success' ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-green-500">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-green-500 dark:bg-green-950/40 dark:text-green-400">
               <CheckCircle size={40} />
             </div>
-            <h3 className="font-serif text-3xl text-brown-dark">Thank You!</h3>
-            <p className="mt-4 max-w-sm text-lg text-brown/80">
+            <h3 className="font-serif text-3xl text-brown-dark dark:text-beige">Thank You!</h3>
+            <p className="mt-4 max-w-sm text-base sm:text-lg text-brown/80 dark:text-beige/80">
               Your feedback means the world to us and helps others know what to expect.
             </p>
             <Button
@@ -122,42 +139,52 @@ export default function OfflineReview() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="w-full space-y-6">
             {loading ? (
-              <div className="text-center text-brown/60">Loading products...</div>
+              <div className="py-8 text-center text-brown/60 dark:text-beige/60">Loading products...</div>
             ) : (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-brown-dark">
+                <label className="text-sm font-medium text-brown-dark dark:text-beige">
                   Which product did you purchase? *
                 </label>
-                <div className="relative">
+                <div ref={dropdownRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex w-full items-center justify-between rounded-lg border border-brown/20 bg-white px-4 py-2.5 text-left text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold"
+                    className="flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-lg border border-brown/20 bg-white px-3.5 py-2.5 text-left text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold dark:border-beige/20 dark:bg-[#1c1611] dark:text-beige"
                   >
                     {selectedProduct ? (
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                         <img 
                           src={selectedProduct.images?.[0] || '/placeholder.png'} 
                           alt={selectedProduct.name}
-                          className="h-8 w-8 rounded object-cover"
+                          className="h-8 w-8 shrink-0 rounded object-cover"
                         />
-                        <span className="truncate">{selectedProduct.name}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-brown-dark dark:text-beige">
+                          {selectedProduct.name}
+                        </span>
                       </div>
                     ) : (
-                      <span className="text-brown/60">Select a product</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-brown/60 dark:text-beige/60">
+                        Select a product
+                      </span>
                     )}
-                    <ChevronDown size={18} className="text-brown/40" />
+                    <ChevronDown
+                      size={18}
+                      className={cn(
+                        "shrink-0 text-brown/40 dark:text-beige/40 transition-transform duration-200",
+                        dropdownOpen && "rotate-180"
+                      )}
+                    />
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute left-0 top-full z-10 mt-1 flex max-h-60 w-full flex-col rounded-lg border border-brown/20 bg-white shadow-lg">
-                      <div className="sticky top-0 z-20 border-b border-brown/10 bg-white p-2">
+                    <div className="absolute left-0 top-full z-20 mt-1 flex max-h-64 w-full flex-col overflow-hidden rounded-lg border border-brown/20 bg-white shadow-xl dark:border-beige/20 dark:bg-[#1c1611]">
+                      <div className="sticky top-0 z-20 border-b border-brown/10 bg-white p-2 dark:border-beige/10 dark:bg-[#1c1611]">
                         <input
                           type="text"
                           placeholder="Search products, colors, tags..."
-                          className="w-full rounded-md border border-brown/20 bg-beige/10 px-3 py-2 text-sm text-brown outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+                          className="w-full max-w-full rounded-md border border-brown/20 bg-beige/10 px-3 py-2 text-sm text-brown outline-none focus:border-gold focus:ring-1 focus:ring-gold dark:border-beige/20 dark:bg-[#2b221a] dark:text-beige placeholder:text-brown/40 dark:placeholder:text-beige/40"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
@@ -174,18 +201,29 @@ export default function OfflineReview() {
                                 setDropdownOpen(false);
                                 setSearchQuery('');
                               }}
-                              className="flex w-full items-center gap-3 border-b border-brown/5 p-3 text-left transition-colors last:border-0 hover:bg-gold/10"
+                              className="flex w-full min-w-0 items-center gap-3 border-b border-brown/5 p-3 text-left transition-colors last:border-0 hover:bg-gold/10 dark:border-beige/5 dark:hover:bg-gold/15"
                             >
                               <img
                                 src={p.images?.[0] || '/placeholder.png'}
                                 alt={p.name}
                                 className="h-10 w-10 shrink-0 rounded object-cover"
                               />
-                              <span className="truncate text-brown-dark">{p.name}</span>
+                              <div className="min-w-0 flex-1 overflow-hidden">
+                                <p className="truncate text-sm font-medium text-brown-dark dark:text-beige">
+                                  {p.name}
+                                </p>
+                                {p.color && (
+                                  <p className="truncate text-xs text-brown/50 dark:text-beige/50">
+                                    {p.color}
+                                  </p>
+                                )}
+                              </div>
                             </button>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-sm text-brown/60">No products found</div>
+                          <div className="p-4 text-center text-sm text-brown/60 dark:text-beige/60">
+                            No products found
+                          </div>
                         )}
                       </div>
                     </div>
@@ -195,7 +233,7 @@ export default function OfflineReview() {
             )}
 
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-brown-dark">
+              <label htmlFor="name" className="text-sm font-medium text-brown-dark dark:text-beige">
                 Your Name *
               </label>
               <input
@@ -205,37 +243,42 @@ export default function OfflineReview() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-brown/20 px-4 py-2.5 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold"
+                autoComplete="name"
+                className="w-full max-w-full rounded-lg border border-brown/20 bg-white px-3.5 py-2.5 text-sm text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold dark:border-beige/20 dark:bg-[#1c1611] dark:text-beige placeholder:text-brown/40 dark:placeholder:text-beige/40"
                 placeholder="Jane Doe"
               />
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-brown-dark">Rating *</label>
-              <div className="flex gap-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-brown-dark dark:text-beige">Rating *</label>
+              <div className="flex flex-wrap items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    className="focus:outline-none"
+                    className="focus:outline-none transition-transform hover:scale-110"
+                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
                     <Star
-                      size={32}
+                      size={30}
                       className={cn(
-                        'transition-colors',
+                        'transition-colors shrink-0',
                         star <= formData.rating
-                          ? 'fill-gold text-gold hover:text-gold/80 hover:fill-gold/80'
-                          : 'text-brown/20 hover:text-brown/40'
+                          ? 'fill-gold text-gold hover:fill-gold/80 hover:text-gold/80'
+                          : 'text-brown/20 dark:text-beige/20 hover:text-brown/40'
                       )}
                     />
                   </button>
                 ))}
+                <span className="ml-2 text-xs font-medium text-brown/60 dark:text-beige/60">
+                  {formData.rating === 5 ? '5.0 - Excellent!' : `${formData.rating}.0`}
+                </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="comment" className="text-sm font-medium text-brown-dark">
+              <label htmlFor="comment" className="text-sm font-medium text-brown-dark dark:text-beige">
                 Review (Optional)
               </label>
               <textarea
@@ -244,13 +287,13 @@ export default function OfflineReview() {
                 rows={4}
                 value={formData.comment}
                 onChange={handleChange}
-                className="w-full resize-none rounded-lg border border-brown/20 px-4 py-3 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold"
+                className="w-full max-w-full resize-none break-words rounded-lg border border-brown/20 bg-white px-3.5 py-3 text-sm text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold dark:border-beige/20 dark:bg-[#1c1611] dark:text-beige placeholder:text-brown/40 dark:placeholder:text-beige/40"
                 placeholder="Tell us what you liked about it..."
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="image" className="text-sm font-medium text-brown-dark">
+              <label htmlFor="image" className="text-sm font-medium text-brown-dark dark:text-beige">
                 Upload a Photo (Optional)
               </label>
               <input
@@ -258,22 +301,35 @@ export default function OfflineReview() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="w-full rounded-lg border border-brown/20 px-4 py-2.5 text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold file:mr-4 file:rounded-full file:border-0 file:bg-gold/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gold hover:file:bg-gold/20"
+                className="w-full max-w-full overflow-hidden text-ellipsis rounded-lg border border-brown/20 bg-white p-2 text-xs text-brown outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold dark:border-beige/20 dark:bg-[#1c1611] dark:text-beige file:mr-3 file:rounded-full file:border-0 file:bg-gold/15 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#825028] dark:file:text-gold hover:file:bg-gold/25"
               />
               {imageFile && (
-                <p className="text-xs text-brown/60">Selected: {imageFile.name}</p>
+                <div className="mt-1.5 flex min-w-0 items-center justify-between gap-2 rounded-lg bg-beige/25 p-2 text-xs text-brown dark:bg-[#2b221a] dark:text-beige">
+                  <span className="min-w-0 flex-1 truncate font-medium">Selected: {imageFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      const el = document.getElementById('image') as HTMLInputElement;
+                      if (el) el.value = '';
+                    }}
+                    className="shrink-0 text-xs font-semibold text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
               )}
             </div>
 
             {status === 'error' && (
-              <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
+              <div className="break-words rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
                 {errorMessage}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full max-w-full"
               size="lg"
               disabled={status === 'loading'}
             >
@@ -285,3 +341,4 @@ export default function OfflineReview() {
     </div>
   );
 }
+

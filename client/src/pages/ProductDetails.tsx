@@ -927,10 +927,10 @@ function ReviewsTab({
           </p>
         ) : (
           reviews.map((r) => (
-            <div key={r._id} className="card-surface p-5 relative">
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-brown-dark dark:text-beige">{r.name}</p>
-                <div className="flex items-center gap-4">
+            <div key={r._id} className="card-surface p-5 relative overflow-hidden">
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 flex-1 truncate font-medium text-brown-dark dark:text-beige">{r.name}</p>
+                <div className="flex shrink-0 items-center gap-4">
                   <Rating value={r.rating} />
                   {user?.role === 'admin' && (
                     <button
@@ -954,7 +954,7 @@ function ReviewsTab({
                 </div>
               </div>
               {r.comment && (
-                <p className="mt-2 text-sm text-brown/70 dark:text-beige/70">{r.comment}</p>
+                <p className="mt-2 text-sm text-brown/70 dark:text-beige/70 break-words whitespace-pre-wrap">{r.comment}</p>
               )}
               {r.image && (
                 <div className="mt-3">

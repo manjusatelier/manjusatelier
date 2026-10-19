@@ -100,23 +100,23 @@ export default function AdminReviews() {
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm dark:bg-[#1c1712] sm:flex-row sm:items-start sm:justify-between"
+              className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-2xl bg-white p-5 shadow-sm dark:bg-[#1c1712] sm:flex-row sm:items-start sm:justify-between"
             >
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-brown-dark dark:text-beige">{review.name}</span>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="min-w-0 truncate font-medium text-brown-dark dark:text-beige">{review.name}</span>
                   <span className="text-xs text-brown/50 dark:text-beige/50">
                     • {formatDate(review.createdAt)}
                   </span>
                 </div>
                 {review.product && (
-                  <div className="text-xs font-medium text-gold">
+                  <div className="break-words text-xs font-medium text-gold">
                     Product: {review.product.name}
                   </div>
                 )}
                 <Rating value={review.rating} count={0} size={16} />
                 {review.comment && (
-                  <p className="mt-2 text-sm text-brown/80 dark:text-beige/80 italic">
+                  <p className="mt-2 text-sm text-brown/80 dark:text-beige/80 italic break-words whitespace-pre-wrap">
                     "{review.comment}"
                   </p>
                 )}
