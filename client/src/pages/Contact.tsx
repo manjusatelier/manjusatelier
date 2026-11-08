@@ -61,7 +61,7 @@ export default function Contact() {
           {[
             { icon: Mail, label: 'Email', value: 'help@manjusatelier.in' },
             { icon: MessageCircle, label: 'WhatsApp', value: '+91 93100 92966' },
-            { icon: MapPin, label: 'Registered Studio Address', value: 'Neelam Apartments, Mansarovar Park, Lal Kuan, Ghaziabad, UP - 201009, India' },
+            { icon: MapPin, label: 'Studio Location', value: 'Ghaziabad, Uttar Pradesh, India' },
             { icon: Clock, label: 'Hours', value: '8:00 AM – 10:00 PM, Daily' },
           ].map((item) => (
             <div key={item.label} className="card-surface flex items-center gap-4 p-5">

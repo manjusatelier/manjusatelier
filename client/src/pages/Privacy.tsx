@@ -102,7 +102,7 @@ export default function Privacy() {
               <br /><br />
               <strong>Entity:</strong> Manju's Atelier
               <br />
-              <strong>Registered Studio Address:</strong> Neelam Apartments, Mansarovar Park, Lal Kuan, Ghaziabad, Uttar Pradesh - 201009, India
+              <strong>Studio Location:</strong> Ghaziabad, Uttar Pradesh, India
               <br />
               <strong>Email:</strong> <a href="mailto:help@manjusatelier.in" className="text-gold hover:underline">help@manjusatelier.in</a>
               <br />
