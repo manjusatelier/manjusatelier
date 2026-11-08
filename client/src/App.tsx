@@ -28,6 +28,8 @@ const Terms = lazy(() => import('@/pages/Terms'));
 const OrderTracking = lazy(() => import('@/pages/OrderTracking'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
+const ShippingPolicy = lazy(() => import('@/pages/ShippingPolicy'));
+const RefundPolicy = lazy(() => import('@/pages/RefundPolicy'));
 
 // Admin
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
@@ -95,6 +97,10 @@ export default function App() {
             <Route path="/track" element={<OrderTracking />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/shipping" element={<ShippingPolicy />} />
+            <Route path="/shipping-policy" element={<ShippingPolicy />} />
+            <Route path="/returns" element={<RefundPolicy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 

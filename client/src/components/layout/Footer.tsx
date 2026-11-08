@@ -34,18 +34,20 @@ const columns = [
   {
     title: 'Support',
     links: [
-      { label: 'Contact', to: '/contact' },
+      { label: 'Contact Us', to: '/contact' },
+      { label: 'Track Order', to: '/track' },
+      { label: 'Shipping & Delivery', to: '/shipping-policy' },
+      { label: 'Returns & Refunds', to: '/refund-policy' },
       { label: 'FAQ', to: '/contact#faq' },
-      { label: 'Shipping', to: '/contact' },
-      { label: 'Returns', to: '/contact' },
     ],
   },
   {
-    title: 'Company',
+    title: 'Legal & Company',
     links: [
       { label: 'Our Story', to: '/about' },
+      { label: 'Terms & Conditions', to: '/terms' },
       { label: 'Privacy Policy', to: '/privacy' },
-      { label: 'Terms', to: '/contact' },
+      { label: 'Bulk Orders', to: '/bulk-orders' },
     ],
   },
 ];
@@ -170,17 +172,25 @@ export function Footer() {
             ))}
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center gap-2 pb-6 text-xs text-beige/40 md:flex-row md:gap-4">
+        <div className="flex flex-col items-center justify-center gap-2 pb-6 text-xs text-beige/50 md:flex-row md:gap-4">
           <p>© {new Date().getFullYear()} Manju's Atelier. All rights reserved.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to="/track" className="hover:text-gold transition-colors font-medium">
               Track Order
             </Link>
-            <span>|</span>
+            <span>•</span>
+            <Link to="/shipping-policy" className="hover:text-gold transition-colors">
+              Shipping & Delivery
+            </Link>
+            <span>•</span>
+            <Link to="/refund-policy" className="hover:text-gold transition-colors">
+              Return & Refund Policy
+            </Link>
+            <span>•</span>
             <Link to="/terms" className="hover:text-gold transition-colors">
               Terms & Conditions
             </Link>
-            <span>|</span>
+            <span>•</span>
             <Link to="/privacy" className="hover:text-gold transition-colors">
               Privacy Policy
             </Link>

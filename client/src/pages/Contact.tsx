@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
 const faqs = [
-  { q: 'Are all products truly handmade?', a: 'Yes! Every single piece is handcrafted in small batches at our studio. No mass production, ever.' },
-  { q: 'Do you take custom orders?', a: 'Absolutely. Use the contact form or the "Request Custom Design" button and we\u2019ll work with you to create something special.' },
-  { q: 'How long does shipping take?', a: 'Ready-made pieces ship within 2-3 business days. Custom orders typically take 1-2 weeks depending on complexity.' },
-  { q: 'What is your return / exchange policy?', a: 'Returns and exchanges must be initiated within 7 days post-delivery. We cannot accept any requests after this period. Items must be in original condition, and custom pieces are non-returnable.' },
-  { q: 'Which payment methods do you accept?', a: 'Currently, we only accept manual UTR UPI payment verifications. We are working on integrating an automated payment gateway in the near future!' },
+  { q: 'Are all products truly handmade?', a: 'Yes! Every single piece is handcrafted in small batches at our studio using premium resin and florals. No mass production, ever.' },
+  { q: 'Do you take custom orders?', a: 'Absolutely. For customisable products, our team will contact you directly to confirm names, colors, and design details before crafting.' },
+  { q: 'How long does shipping and delivery take?', a: 'Ready-made pieces are dispatched within 2-4 business days. Custom orders take 7-10 business days to craft and cure. Domestic delivery across India takes 4-7 business days post-dispatch with full tracking.' },
+  { q: 'What is your return / exchange policy?', a: 'Return requests must be initiated within 48 hours of delivery for damaged or defective items with unboxing proof. Items must be in original condition with packaging. Please note that shipping charges are non-refundable. Custom pieces are non-returnable unless damaged in transit.' },
+  { q: 'Which payment methods do you accept?', a: 'We accept all major secure payment options including UPI (Google Pay, PhonePe, Paytm, CRED), Credit/Debit Cards (Visa, Mastercard, RuPay), and Net Banking via our payment gateway partner, as well as direct UPI transfers.' },
 ];
 
 export default function Contact() {
@@ -61,7 +61,7 @@ export default function Contact() {
           {[
             { icon: Mail, label: 'Email', value: 'help@manjusatelier.in' },
             { icon: MessageCircle, label: 'WhatsApp', value: '+91 93100 92966' },
-            { icon: MapPin, label: 'Studio', value: 'Ghaziabad, India' },
+            { icon: MapPin, label: 'Registered Studio Address', value: 'Neelam Apartments, Mansarovar Park, Lal Kuan, Ghaziabad, UP - 201009, India' },
             { icon: Clock, label: 'Hours', value: '8:00 AM – 10:00 PM, Daily' },
           ].map((item) => (
             <div key={item.label} className="card-surface flex items-center gap-4 p-5">

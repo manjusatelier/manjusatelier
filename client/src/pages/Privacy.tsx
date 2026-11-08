@@ -35,7 +35,7 @@ export default function Privacy() {
             </p>
             <ul className="mt-2 list-disc pl-5 space-y-1 text-brown/80 dark:text-beige/80">
               <li><strong>Personal Identification Information:</strong> Name, email address, phone number, shipping and billing addresses.</li>
-              <li><strong>Payment Information:</strong> Payments are processed manually via secure UPI transfers. We collect transaction reference numbers (UTR) to verify your payments. We do not collect or store any bank account or credit card details.</li>
+              <li><strong>Payment Information:</strong> Online payments are processed securely through RBI-authorized payment gateway partners (such as Cashfree Payments) supporting UPI, Debit/Credit Cards, and Net Banking. All transactions are encrypted via 256-bit SSL encryption. We do not capture, process, or store your credit/debit card numbers, CVVs, or Net Banking credentials on our servers. For manual UPI transactions, we only collect the reference transaction UTR number to verify the order.</li>
               <li><strong>Account Data:</strong> Order history, wishlist items, and preferences. If you log in via Google, we receive your basic profile information (name and email) from Google.</li>
               <li><strong>Technical Data:</strong> IP address, browser type, device information, and usage patterns collected via cookies.</li>
             </ul>
@@ -95,14 +95,18 @@ export default function Privacy() {
 
           <section>
             <h2 className="font-serif text-xl font-medium text-brown-dark dark:text-beige">
-              7. Contact Us
+              7. Contact Us & Grievance Officer
             </h2>
             <p className="mt-2 leading-relaxed text-brown/80 dark:text-beige/80">
-              If you have any questions or concerns about this Privacy Policy, please contact us at:
+              If you have any questions, privacy concerns, or data requests regarding this Privacy Policy, please contact our Grievance Officer at:
+              <br /><br />
+              <strong>Entity:</strong> Manju's Atelier
               <br />
-              <a href="mailto:help@manjusatelier.in" className="text-gold hover:underline mt-1 inline-block">
-                help@manjusatelier.in
-              </a>
+              <strong>Registered Studio Address:</strong> Neelam Apartments, Mansarovar Park, Lal Kuan, Ghaziabad, Uttar Pradesh - 201009, India
+              <br />
+              <strong>Email:</strong> <a href="mailto:help@manjusatelier.in" className="text-gold hover:underline">help@manjusatelier.in</a>
+              <br />
+              <strong>WhatsApp / Support Phone:</strong> +91 93100 92966
             </p>
           </section>
         </div>

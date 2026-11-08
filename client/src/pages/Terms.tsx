@@ -34,34 +34,40 @@ export default function Terms() {
 
           <section>
             <h2 className="text-2xl font-semibold text-brown-dark dark:text-beige">
-              3. Payments & Manual UPI
+              3. Pricing & Payments
             </h2>
             <p className="text-brown/80 dark:text-beige/80">
-              We accept payments via UPI. Upon placing an order, you will be provided with a QR code and UPI ID. Your order will be placed in a "Pending UTR" state until you successfully transfer the funds and provide the 12-digit UTR (Transaction ID). 
+              All prices displayed on our website are in Indian Rupees (INR ₹) inclusive of applicable taxes unless stated otherwise. We accept payments through secure online payment gateway services (supporting UPI Apps like Google Pay, PhonePe, Paytm, CRED, Debit/Credit Cards from Visa, Mastercard, RuPay, and Net Banking), as well as direct UPI transfers with UTR verification.
               <br /><br />
-              Orders will only be processed and confirmed once the payment is verified against the provided UTR by our admin team. If payment is not completed within 48 hours, the order will be automatically cancelled.
+              All online payment processing is encrypted with industry-standard 256-bit SSL protocols. In the case of manual UPI payments, orders are placed on hold and confirmed once the 12-digit UTR is verified by our team.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold text-brown-dark dark:text-beige">
-              4. Shipping & Delivery
+              4. Shipping & Delivery Terms
             </h2>
             <p className="text-brown/80 dark:text-beige/80">
-              Since our products are crafted with care, processing times may vary between 3-7 business days before shipping. Once shipped, a tracking link and AWB number will be provided. We are not responsible for delays caused by the courier service, but we will assist in tracking lost packages.
+              Standard ready-to-ship products are dispatched within 2 to 4 business days. Customized or personalized creations require 7 to 10 business days for handcrafting and curing. Once dispatched, domestic delivery across India typically takes between 4 to 7 business days depending on customer location.
+              <br /><br />
+              Standard domestic shipping is charged at a flat ₹79 for orders under ₹1499, and free shipping is offered on orders of ₹1499 and above. <strong>Please note that shipping charges are strictly non-refundable under all circumstances once an order has been dispatched.</strong> For complete details, please review our dedicated <a href="/shipping-policy" className="text-gold underline">Shipping & Delivery Policy</a>.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold text-brown-dark dark:text-beige">
-              5. Returns, Refunds & Cancellations
+              5. Cancellations, Returns & Refunds (48-Hour Return Window)
             </h2>
             <p className="text-brown/80 dark:text-beige/80">
-              <strong>Cancellations:</strong> You may cancel your order within 24 hours of placing it (provided it has not already been shipped) for a full refund.
+              <strong>Order Cancellations:</strong> You may cancel any ready-made order within 24 hours of placing it (or before courier dispatch) for a 100% full refund.
               <br /><br />
-              <strong>Returns:</strong> Due to the fragile and custom nature of our crafts, we do not accept returns unless the item arrives severely damaged. If your item arrives damaged, please contact us within 48 hours of delivery with clear photographs of the package and the product.
+              <strong>48-Hour Return Window:</strong> Customers may submit a return or replacement request within <strong>48 hours of delivery</strong> if an item arrives damaged in transit, defective, or incorrect. Unboxing photos or video evidence must be provided via email or WhatsApp within 48 hours of delivery.
               <br /><br />
-              <strong>Refunds:</strong> Approved refunds will be processed back to the original UPI account within 5-7 business days.
+              <strong>Non-Refundable Shipping:</strong> Shipping charges incurred are strictly non-refundable. Approved refunds will cover the product purchase price minus any courier shipping costs.
+              <br /><br />
+              <strong>Customisable & Personalized Products:</strong> For customisable products, our team will always contact you directly to confirm all customization details, names, and color requirements before crafting begins. Due to the bespoke nature of these products, customized items are non-returnable and non-refundable unless damaged upon arrival.
+              <br /><br />
+              <strong>Refund Settlement:</strong> Approved refunds are initiated within 2 business days and credited to the customer's original payment method within 5 to 7 business days. For full terms, please visit our <a href="/refund-policy" className="text-gold underline">Refund & Return Policy</a>.
             </p>
           </section>
 
@@ -70,7 +76,24 @@ export default function Terms() {
               6. Intellectual Property
             </h2>
             <p className="text-brown/80 dark:text-beige/80">
-              All content on this website, including but not limited to designs, text, graphics, logos, and images, is the property of Manju's Atelier. Unauthorized use or reproduction of our designs is strictly prohibited.
+              All content on this website, including but not limited to designs, text, graphics, logos, photos, and handcrafted patterns, is the property of Manju's Atelier. Unauthorized use, commercial reproduction, or imitation of our designs is strictly prohibited.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-brown-dark dark:text-beige">
+              7. Contact & Operational Address
+            </h2>
+            <p className="text-brown/80 dark:text-beige/80">
+              For any legal notices, queries, or assistance, you can reach out to us at:
+              <br />
+              <strong>Entity Name:</strong> Manju's Atelier
+              <br />
+              <strong>Registered Studio Address:</strong> Neelam Apartments, Mansarovar Park, Lal Kuan, Ghaziabad, Uttar Pradesh - 201009, India
+              <br />
+              <strong>Customer Support Email:</strong> help@manjusatelier.in
+              <br />
+              <strong>WhatsApp / Support Phone:</strong> +91 93100 92966
             </p>
           </section>
         </div>
