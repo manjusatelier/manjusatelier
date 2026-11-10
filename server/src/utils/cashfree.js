@@ -78,7 +78,9 @@ export async function createCashfreeOrder({
     },
     order_meta: {
       return_url: returnUrl || undefined,
-      notify_url: notifyUrl || undefined,
+      // Cashfree strictly enforces that notify_url must be HTTPS.
+      // Omit notify_url if it's not HTTPS (e.g. localhost) so Cashfree doesn't reject the order.
+      notify_url: notifyUrl && String(notifyUrl).startsWith('https://') ? notifyUrl : undefined,
     },
     order_note: `Manju's Atelier Order ${orderId}`,
   };

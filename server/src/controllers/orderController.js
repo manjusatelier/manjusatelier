@@ -96,7 +96,10 @@ export const createOrder = asyncHandler(async (req, res) => {
     try {
       const clientUrl = process.env.CLIENT_URL?.split(',')[0] || 'http://localhost:5173';
       const returnUrl = `${clientUrl}/checkout/success/${order._id}?cf_id={order_id}`;
-      const notifyUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/webhooks/cashfree`;
+      const backendUrl = process.env.BACKEND_URL;
+      const notifyUrl = backendUrl && backendUrl.startsWith('https://')
+        ? `${backendUrl}/api/webhooks/cashfree`
+        : undefined;
 
       const cfResponse = await createCashfreeOrder({
         orderId: order.customOrderId,
