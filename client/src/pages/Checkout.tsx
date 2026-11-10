@@ -584,7 +584,7 @@ export default function Checkout() {
               </div>
             </dl>
             <p className="mt-4 flex items-center gap-1.5 text-xs text-brown/50 dark:text-beige/50">
-              <Lock size={12} /> Secure UPI Payment.
+              <Lock size={12} /> 100% Safe & Secure Checkout
             </p>
           </div>
         </aside>

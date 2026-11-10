@@ -7,6 +7,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Chatbot } from '@/components/ui/Chatbot';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ProductModal } from '@/components/product/ProductModal';
+import { ReleaseNoteModal } from '@/components/ui/ReleaseNoteModal';
 
 // const Home = lazy(() => import('@/pages/Home'));
 const Shop = lazy(() => import('@/pages/Shop'));
@@ -66,6 +67,7 @@ export default function App() {
       <OfflineBanner />
       <Chatbot />
       <ProductModal />
+      <ReleaseNoteModal />
       {needRefresh && (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-gold px-4 py-3 text-brown-dark shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
           <p className="text-sm font-medium">A new version of Manju's Atelier is available.</p>
