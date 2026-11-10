@@ -3,6 +3,11 @@ import Category from '../models/Category.js';
 import Order from '../models/Order.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
 import { getCache, setCache, clearCachePattern } from '../utils/cache.js';
+import {
+  isTestDummyProduct,
+  canUserAccessTestProduct,
+  TEST_PRODUCT_QUERY_EXCLUSION,
+} from '../utils/testProduct.js';
 
 /**
  * GET /api/products
@@ -10,7 +15,8 @@ import { getCache, setCache, clearCachePattern } from '../utils/cache.js';
  * inStock, sort, page, limit.
  */
 export const getProducts = asyncHandler(async (req, res) => {
-  const cacheKey = `products:${req.originalUrl}`;
+  const canSeeTest = canUserAccessTestProduct(req.user);
+  const cacheKey = `products:${canSeeTest ? 'auth_test:' : 'public:'}${req.originalUrl}`;
   const cached = await getCache(cacheKey);
   if (cached) return res.json(cached);
 
@@ -30,6 +36,11 @@ export const getProducts = asyncHandler(async (req, res) => {
   } = req.query;
 
   const filter = {};
+
+  if (!canSeeTest) {
+    filter.$and = filter.$and || [];
+    filter.$and.push(...TEST_PRODUCT_QUERY_EXCLUSION);
+  }
 
   if (ids) {
     const idArray = ids.split(',').map(id => id.trim()).filter(Boolean);
@@ -104,11 +115,17 @@ export const getProducts = asyncHandler(async (req, res) => {
 });
 
 export const getFeatured = asyncHandler(async (req, res) => {
-  const cacheKey = 'products:featured';
+  const canSeeTest = canUserAccessTestProduct(req.user);
+  const cacheKey = `products:featured:${canSeeTest ? 'auth_test' : 'public'}`;
   const cached = await getCache(cacheKey);
   if (cached) return res.json(cached);
 
-  const products = await Product.find({ featured: true })
+  const query = { featured: true };
+  if (!canSeeTest) {
+    query.$and = [...TEST_PRODUCT_QUERY_EXCLUSION];
+  }
+
+  const products = await Product.find(query)
     .populate('category', 'name slug')
     .limit(8);
     
@@ -198,7 +215,8 @@ export async function findVariantsForProduct(product) {
 }
 
 export const getProductBySlug = asyncHandler(async (req, res) => {
-  const cacheKey = `products:slug:${req.params.slug}`;
+  const canSeeTest = canUserAccessTestProduct(req.user);
+  const cacheKey = `products:slug:${req.params.slug}:${canSeeTest ? 'auth_test' : 'public'}`;
   const cached = await getCache(cacheKey);
   if (cached) return res.json(cached);
 
@@ -208,15 +226,24 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
   );
   if (!product) throw new ApiError(404, 'Product not found');
 
+  if (isTestDummyProduct(product) && !canSeeTest) {
+    throw new ApiError(404, 'Product not found');
+  }
+
   const variants = await findVariantsForProduct(product);
   const variantIds = variants.map(v => v._id);
   const excludeIds = [product._id, ...variantIds];
 
   const categoryIds = product.category.map(c => c._id);
-  const related = await Product.find({
+  const relatedQuery = {
     category: { $in: categoryIds },
     _id: { $nin: excludeIds },
-  })
+  };
+  if (!canSeeTest) {
+    relatedQuery.$and = [...TEST_PRODUCT_QUERY_EXCLUSION];
+  }
+
+  const related = await Product.find(relatedQuery)
     .limit(4)
     .populate('category', 'name slug');
 
@@ -406,6 +433,11 @@ export const getAlsoBought = asyncHandler(async (req, res) => {
     return res.json([]);
   }
 
-  const relatedProducts = await Product.find({ _id: { $in: topProductIds }, stock: { $gt: 0 } }).lean();
+  const query = { _id: { $in: topProductIds }, stock: { $gt: 0 } };
+  if (!canUserAccessTestProduct(req.user)) {
+    query.$and = [...TEST_PRODUCT_QUERY_EXCLUSION];
+  }
+
+  const relatedProducts = await Product.find(query).lean();
   res.json(relatedProducts);
 });

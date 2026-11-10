@@ -133,6 +133,8 @@ export default function Checkout() {
         if (result.error) {
           notify(result.error.message || 'Payment window closed or incomplete.', 'error');
           setProcessing(false);
+          setActiveOrder(null);
+          setCashfreeSessionId(null);
         }
         if (result.paymentDetails) {
           setProcessing(true);

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validate.js';
-import { protect, adminOnly } from '../middleware/auth.js';
+import { protect, adminOnly, optionalAuth } from '../middleware/auth.js';
 import {
   getProducts,
   getFeatured,
@@ -16,10 +16,10 @@ import { getProductReviews, createReview } from '../controllers/reviewController
 
 const router = Router();
 
-router.get('/', getProducts);
-router.get('/featured', getFeatured);
-router.get('/:slug', getProductBySlug);
-router.get('/:id/also-bought', getAlsoBought);
+router.get('/', optionalAuth, getProducts);
+router.get('/featured', optionalAuth, getFeatured);
+router.get('/:slug', optionalAuth, getProductBySlug);
+router.get('/:id/also-bought', optionalAuth, getAlsoBought);
 router.post('/:id/notify-stock', subscribeBackInStock);
 
 // reviews nested under product

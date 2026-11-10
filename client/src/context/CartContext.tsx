@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { finalPrice } from '@/lib/utils';
 import { useAuth } from './AuthContext';
 import type { CartItem, Product } from '@/types';
+import { isTestDummyProduct } from '@/utils/testProduct';
 
 interface CartContextType {
   items: CartItem[];
@@ -31,13 +32,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart from DB if logged in, otherwise from local storage
   useEffect(() => {
-    if (user && user.cart && !syncedOnce) {
+    if (user && !syncedOnce) {
       // Get DB items
-      const dbItems = user.cart.map((c: { product: Product, quantity: number }) => ({
-        product: c.product,
-        quantity: c.quantity
-      }));
-      
+      const dbItems: CartItem[] = (user.cart || [])
+        .filter((c: any) => c && c.product && c.product._id)
+        .map((c: { product: Product; quantity: number }) => ({
+          product: c.product,
+          quantity: c.quantity,
+        }));
+
       // Get Local items (guest cart)
       let localItems: CartItem[] = [];
       try {
@@ -45,30 +48,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (saved) localItems = JSON.parse(saved);
       } catch (e) {}
 
-      // Merge local into DB
+      // Authoritative cart calculation:
+      // If user has saved cart in DB, use DB items as the base.
+      // NEVER sum (dbQty + localQty) for the same product to prevent doubling!
       const mergedMap = new Map<string, CartItem>();
-      dbItems.forEach(item => mergedMap.set(item.product._id, item));
-      
-      localItems.forEach(item => {
-        if (mergedMap.has(item.product._id)) {
-           const existing = mergedMap.get(item.product._id)!;
-           existing.quantity = Math.min(existing.quantity + item.quantity, existing.product.stock, 10);
-        } else {
-           mergedMap.set(item.product._id, item);
-        }
-      });
-      
+
+      if (dbItems.length > 0) {
+        // Use DB cart as authoritative
+        dbItems.forEach((item) => mergedMap.set(item.product._id, item));
+
+        // If there were guest items added before logging in that are NOT in DB, include them:
+        localItems.forEach((item) => {
+          if (item?.product?._id && !mergedMap.has(item.product._id)) {
+            mergedMap.set(item.product._id, item);
+          }
+        });
+      } else {
+        // DB cart was empty; migrate any existing local items
+        localItems.forEach((item) => {
+          if (item?.product?._id) {
+            mergedMap.set(item.product._id, item);
+          }
+        });
+      }
+
       const finalItems = Array.from(mergedMap.values());
       setItems(finalItems);
       setSyncedOnce(true);
       setLoaded(true);
-      
-      // Sync merged cart to backend if we had local items
-      if (localItems.length > 0) {
-        api.post('/auth/cart/sync', { 
-          items: finalItems.map(i => ({ productId: i.product._id, quantity: i.quantity })) 
-        }).catch(console.error);
-      }
+
+      // Save to localStorage immediately so it stays strictly in sync
+      localStorage.setItem('manjus_cart', JSON.stringify(finalItems));
+
+      // Sync merged cart to backend
+      api.post('/auth/cart/sync', {
+        items: finalItems.map((i) => ({ productId: i.product._id, quantity: i.quantity })),
+      }).catch(console.error);
     } else if (!user) {
       setSyncedOnce(false);
     }
@@ -145,9 +160,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = () => setItems([]);
 
+  const regularItems = items.filter((item) => !isTestDummyProduct(item.product));
   const count = items.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = items.reduce((acc, item) => acc + finalPrice(item.product) * item.quantity, 0);
-  const shippingFee = subtotal === 0 || subtotal >= freeShippingThreshold ? 0 : shippingFlat;
+  const shippingFee =
+    regularItems.length === 0 || subtotal === 0 || subtotal >= freeShippingThreshold
+      ? 0
+      : shippingFlat;
 
   return (
     <CartContext.Provider

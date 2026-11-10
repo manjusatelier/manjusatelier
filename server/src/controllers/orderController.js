@@ -10,6 +10,7 @@ import { getRazorpay, verifyPaymentSignature } from '../utils/razorpay.js';
 import { createCashfreeOrder, fetchCashfreeOrder, fetchCashfreePayments } from '../utils/cashfree.js';
 import notificationService from '../services/notificationService.js';
 import { generateInvoice } from '../utils/invoiceGenerator.js';
+import { isTestDummyProduct, canUserAccessTestProduct } from '../utils/testProduct.js';
 
 /**
  * Recompute the cart total from the DATABASE (never trust client prices).
@@ -58,7 +59,14 @@ async function computeCart(items, couponCode) {
   if (!setting) {
     setting = { shippingFlat: 79, freeShippingThreshold: 1499 };
   }
-  const shippingFee = afterDiscount >= setting.freeShippingThreshold ? 0 : setting.shippingFlat;
+
+  // Shipping fee is waived (0) if the order consists only of dummy/test products,
+  // or if the subtotal reaches the free shipping threshold.
+  const regularItems = orderItems.filter((item) => !isTestDummyProduct(item));
+  const shippingFee =
+    regularItems.length === 0 || afterDiscount >= setting.freeShippingThreshold
+      ? 0
+      : setting.shippingFlat;
   const total = afterDiscount + shippingFee;
 
   return { orderItems, subtotal, discount, shippingFee, total, appliedCode };
@@ -75,6 +83,11 @@ export const createOrder = asyncHandler(async (req, res) => {
     items,
     couponCode
   );
+
+  // Check authorization for test/dummy products
+  if (orderItems.some((item) => isTestDummyProduct(item)) && !canUserAccessTestProduct(req.user)) {
+    throw new ApiError(403, 'You do not have access to purchase this test product.');
+  }
 
   const order = await Order.create({
     user: req.user._id,

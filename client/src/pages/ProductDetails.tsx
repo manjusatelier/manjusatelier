@@ -34,6 +34,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { RecentlyViewed } from '@/components/product/RecentlyViewed';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { trackEvent } from '@/lib/analytics';
+import { isTestDummyProduct, canUserAccessTestProduct } from '@/utils/testProduct';
 
 const tabs = ['Description', 'Details', 'Care'] as const;
 type Tab = (typeof tabs)[number];
@@ -145,7 +146,7 @@ export default function ProductDetails() {
   }, [product]);
 
   if (loading) return <DetailsSkeleton />;
-  if (!product)
+  if (!product || (isTestDummyProduct(product) && !canUserAccessTestProduct(user)))
     return (
       <div className="container-x grid place-items-center py-32 text-center">
         <p className="font-serif text-3xl text-brown-dark dark:text-beige">Product not found</p>

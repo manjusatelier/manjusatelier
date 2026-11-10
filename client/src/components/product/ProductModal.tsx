@@ -7,6 +7,7 @@ import type { Product, ProductVariant } from '@/types';
 import { cn, formatPrice, finalPrice, categoryName } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -14,6 +15,7 @@ import { Rating } from '@/components/ui/Rating';
 import { useProductModal } from '@/context/ProductModalContext';
 import { trackEvent } from '@/lib/analytics';
 import { optimizeCloudinaryUrl } from '@/lib/image';
+import { isTestDummyProduct, canUserAccessTestProduct } from '@/utils/testProduct';
 
 function getVariantLabel(variant: { name: string; color?: string }): string {
   if (variant.color) return variant.color;
@@ -40,6 +42,7 @@ export function ProductModal() {
 
   const { add, items, setQuantity } = useCart();
   const { has, toggle } = useWishlist();
+  const { user } = useAuth();
   const { notify } = useToast();
 
   const cartItem = items.find((i) => i.product._id === product?._id);
@@ -102,6 +105,11 @@ export function ProductModal() {
       api
         .get<{ product: Product; variants?: ProductVariant[] }>(`/products/${activeSlug}`)
         .then((res) => {
+          if (isTestDummyProduct(res.product) && !canUserAccessTestProduct(user)) {
+            setProduct(null);
+            closeModal();
+            return;
+          }
           setProduct(res.product);
           setVariants(res.variants || []);
           trackEvent('product_viewed', { source: 'quick_view' }, res.product._id);

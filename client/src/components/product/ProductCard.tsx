@@ -8,13 +8,20 @@ import { Rating } from '@/components/ui/Rating';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { isTestDummyProduct, canUserAccessTestProduct } from '@/utils/testProduct';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { user } = useAuth();
+  if (isTestDummyProduct(product) && !canUserAccessTestProduct(user)) {
+    return null;
+  }
+
   const { has, toggle } = useWishlist();
   const { add } = useCart();
   const { notify } = useToast();
