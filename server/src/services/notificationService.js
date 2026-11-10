@@ -130,21 +130,21 @@ class NotificationService {
     if (email) {
       await sendEmail({
         email,
-        subject: `Payment Verified - Order #${order.customOrderId} 💸`,
+        subject: `Order Confirmed! 🎉 - #${order.customOrderId}`,
         html: getPaymentVerifiedTemplate(order)
       }).catch(e => console.error('Email failed:', e));
     }
 
     await Notification.create({
       user: order.user._id || order.user,
-      title: 'Payment Verified 💸',
-      message: `We received your payment for order #${order.customOrderId}. We are now processing it.`,
+      title: 'Order Confirmed! 🎉',
+      message: `Your payment for order #${order.customOrderId} was successful and your order is confirmed.`,
       link: `/account?tab=orders`,
     }).catch(e => console.error('In-app notification failed:', e));
 
     await this._sendPush(order.user._id || order.user, {
-      title: 'Payment Verified 💸',
-      body: `Your payment for order #${order.customOrderId} has been verified.`,
+      title: 'Order Confirmed 🎉',
+      body: `Your payment for order #${order.customOrderId} was successful and your order is confirmed!`,
       icon: '/pwa-192x192.png',
       url: '/account?tab=orders'
     });

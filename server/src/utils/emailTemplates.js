@@ -56,9 +56,19 @@ export const getPaymentVerifiedTemplate = (order) => `
       <h1 style="color: #4a3b32; margin: 0; font-size: 24px;">Manju's Atelier</h1>
     </div>
     <div style="padding: 30px; background-color: #ffffff;">
-      <h2 style="color: #4a3b32; margin-top: 0;">Woohoo! Payment Successful! 💸</h2>
-      <p style="color: #666666; line-height: 1.6;">Great news! Your payment for order <strong>#${order.customOrderId}</strong> has been successfully verified.</p>
-      <p style="color: #666666; line-height: 1.6;">We are now preparing your items for shipment. We will notify you as soon as they are dispatched.</p>
+      <h2 style="color: #4a3b32; margin-top: 0;">Order Confirmed! 🎉</h2>
+      <p style="color: #666666; line-height: 1.6;">Thank you for your purchase! Your payment for order <strong>#${order.customOrderId}</strong> has been successfully received and your order is confirmed.</p>
+      <p style="color: #666666; line-height: 1.6;">Our artisans are now lovingly preparing your items. We will notify you as soon as your package has shipped.</p>
+      
+      <div style="margin: 25px 0; padding: 15px; background-color: #fcf9f2; border-left: 4px solid #c19b6c; border-radius: 4px;">
+        <p style="margin: 0; color: #4a3b32; font-size: 14px; line-height: 1.5;">
+          <strong>✨ Customisable Products:</strong> For customisable products in your order, our team will contact you directly to confirm all customisation details and specifications before crafting begins.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="${process.env.CLIENT_URL || 'https://manjusatelier.in'}/account?tab=orders" style="display: inline-block; background-color: #c19b6c; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; font-size: 16px;">View Order Status</a>
+      </div>
     </div>
   </div>
 `;

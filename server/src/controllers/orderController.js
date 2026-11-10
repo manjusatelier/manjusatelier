@@ -128,10 +128,10 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
   }
 
-  // Send Order Received Notifications (Email, In-App, Push, Socket)
-  notificationService.notifyOrderReceived(order).catch((err) => {
-    console.error('Failed to send order received notifications:', err);
-  });
+  // Emit socket update to admins only (customer is only notified after successful payment)
+  try {
+    getSocket().to('admins').emit('order_update', { type: 'NEW_ORDER', orderId: order._id });
+  } catch (err) {}
 
   res.status(201).json({
     success: true,
