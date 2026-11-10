@@ -455,6 +455,11 @@ export default function Orders() {
                       
                       <div className="mt-3 border-t border-brown/10 pt-2">
                          <p className="text-xs text-brown/50">Method: {o.paymentMethod || 'UPI'}</p>
+                         {o.cashfreePaymentId && (
+                           <p className="font-mono text-xs mt-1 text-brown/80 dark:text-beige/80">
+                             Cashfree Txn ID: <span className="font-semibold text-brown-dark dark:text-beige">{o.cashfreePaymentId}</span>
+                           </p>
+                         )}
                          {o.utrNumber && (
                            <p className="font-mono text-sm mt-1">
                              UTR: <span className="font-bold text-brown-dark dark:text-beige">{o.utrNumber}</span>

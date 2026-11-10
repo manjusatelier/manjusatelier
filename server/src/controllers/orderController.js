@@ -7,6 +7,7 @@ import Setting from '../models/Setting.js';
 import Notification from '../models/Notification.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
 import { getRazorpay, verifyPaymentSignature } from '../utils/razorpay.js';
+import { createCashfreeOrder, fetchCashfreeOrder, fetchCashfreePayments } from '../utils/cashfree.js';
 import notificationService from '../services/notificationService.js';
 import { generateInvoice } from '../utils/invoiceGenerator.js';
 
@@ -65,7 +66,7 @@ async function computeCart(items, couponCode) {
 
 /** POST /api/orders  — creates a pending order. */
 export const createOrder = asyncHandler(async (req, res) => {
-  const { items, shippingAddress, couponCode } = req.body;
+  const { items, shippingAddress, couponCode, paymentMethod = 'UPI' } = req.body;
   if (!shippingAddress?.line1 || !shippingAddress?.city || !shippingAddress?.postalCode) {
     throw new ApiError(400, 'Complete shipping address is required');
   }
@@ -84,9 +85,45 @@ export const createOrder = asyncHandler(async (req, res) => {
     shippingFee,
     total,
     couponCode: appliedCode,
+    paymentMethod,
     paymentStatus: 'PAYMENT_PENDING',
   });
 
+  // If Cashfree / online payment is requested, initialize payment session with Cashfree
+  let paymentSessionId = null;
+  let cashfreeOrderId = null;
+  if (paymentMethod === 'CASHFREE' || paymentMethod === 'ONLINE') {
+    try {
+      const clientUrl = process.env.CLIENT_URL?.split(',')[0] || 'http://localhost:5173';
+      const returnUrl = `${clientUrl}/checkout/success/${order._id}?cf_id={order_id}`;
+      const notifyUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/webhooks/cashfree`;
+
+      const cfResponse = await createCashfreeOrder({
+        orderId: order.customOrderId,
+        orderAmount: total,
+        customer: {
+          id: req.user._id,
+          name: req.user.name,
+          email: req.user.email,
+          phone: shippingAddress.phone,
+        },
+        returnUrl,
+        notifyUrl,
+      });
+
+      paymentSessionId = cfResponse.payment_session_id;
+      cashfreeOrderId = cfResponse.order_id;
+
+      order.cashfreeOrderId = cashfreeOrderId;
+      order.cashfreePaymentSessionId = paymentSessionId;
+      await order.save();
+    } catch (cfErr) {
+      console.error('Cashfree order creation error:', cfErr.response?.data || cfErr.message);
+      await Order.findByIdAndDelete(order._id);
+      const errMsg = cfErr.response?.data?.message || cfErr.message || 'Payment gateway initialization failed';
+      throw new ApiError(500, `Failed to initialize Cashfree payment: ${errMsg}`);
+    }
+  }
 
   // Send Order Received Notifications (Email, In-App, Push, Socket)
   notificationService.notifyOrderReceived(order).catch((err) => {
@@ -95,8 +132,102 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    order: { id: order._id, customOrderId: order.customOrderId, amount: total, createdAt: order.createdAt },
+    order: {
+      id: order._id,
+      customOrderId: order.customOrderId,
+      amount: total,
+      createdAt: order.createdAt,
+      paymentMethod: order.paymentMethod,
+    },
+    paymentSessionId,
+    cashfreeOrderId,
   });
+});
+
+/** POST /api/orders/:id/verify-cashfree — verify payment with Cashfree and confirm order. */
+export const verifyCashfreePayment = asyncHandler(async (req, res) => {
+  const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  if (order.paymentStatus === 'SUCCESSFUL' || order.paymentStatus === 'UTR_VERIFIED') {
+    return res.json({ success: true, verified: true, order });
+  }
+
+  const cfOrderId = order.cashfreeOrderId || order.customOrderId;
+  const cfOrder = await fetchCashfreeOrder(cfOrderId);
+
+  if (cfOrder.order_status === 'PAID') {
+    let cfPaymentId;
+    try {
+      const payments = await fetchCashfreePayments(cfOrderId);
+      const successfulPayment = Array.isArray(payments)
+        ? payments.find((p) => p.payment_status === 'SUCCESS')
+        : null;
+      if (successfulPayment) {
+        cfPaymentId = String(successfulPayment.cf_payment_id);
+      }
+    } catch (err) {
+      console.warn('Could not fetch payment details for Cashfree order:', err.message);
+    }
+
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        for (const item of order.items) {
+          const p = await Product.findOneAndUpdate(
+            { _id: item.product },
+            { $inc: { stock: -item.quantity } },
+            { session, new: true }
+          );
+          if (p && p.stock <= 10) {
+            try {
+              const { sendBatchPushNotification } = await import('../utils/push.js');
+              const PushSubscription = (await import('../models/PushSubscription.js')).default;
+              const adminSubs = await PushSubscription.find({}).populate('user');
+              const subsToNotify = adminSubs.filter((sub) => sub.user && sub.user.role === 'admin');
+              if (subsToNotify.length > 0) {
+                await sendBatchPushNotification(subsToNotify, {
+                  title: 'Low Stock Alert ⚠️',
+                  body: `${p.name} is running low! Only ${p.stock} left in stock.`,
+                  icon: p.images[0] || '/pwa-192x192.png',
+                  url: '/admin/products',
+                });
+              }
+            } catch (err) {
+              console.error('Failed to send low stock notification', err);
+            }
+          }
+        }
+
+        order.paymentStatus = 'SUCCESSFUL';
+        order.orderStatus = 'confirmed';
+        if (cfPaymentId) order.cashfreePaymentId = cfPaymentId;
+        await order.save({ session });
+      });
+    } finally {
+      session.endSession();
+    }
+
+    notificationService.notifyPaymentVerified(order).catch((err) => {
+      console.error('Failed to send payment verified notifications:', err);
+    });
+
+    try {
+      getSocket().to(`user_${order.user._id.toString()}`).emit('order_update', { orderId: order._id });
+      getSocket().to('admins').emit('order_update', { orderId: order._id });
+    } catch (err) {
+      console.error('Socket emission failed:', err);
+    }
+
+    return res.json({ success: true, verified: true, order });
+  } else {
+    return res.json({
+      success: false,
+      verified: false,
+      status: cfOrder.order_status,
+      message: `Order status is currently ${cfOrder.order_status}`,
+    });
+  }
 });
 
 /** POST /api/orders/:id/utr — submit UTR number. */

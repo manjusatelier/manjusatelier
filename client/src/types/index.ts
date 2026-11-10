@@ -119,6 +119,9 @@ export interface Order {
   utrNumber?: string;
   utrEdited?: boolean;
   customOrderId?: string;
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string;
+  cashfreePaymentSessionId?: string;
   razorpayOrderId?: string;
   createdAt: string;
   deliveredAt?: string;

@@ -9,7 +9,7 @@ const features = [
   { icon: Heart, title: 'Made with Love', desc: 'Care and intention poured into every detail.' },
   { icon: PenTool, title: 'Custom Orders', desc: 'Personalised creations made just for you.' },
   { icon: Truck, title: 'Fast Delivery', desc: 'Carefully packaged and shipped across India.' },
-  { icon: ShieldCheck, title: 'Secure Payments', desc: 'Safe checkout powered by Razorpay.' },
+  { icon: ShieldCheck, title: 'Secure Payments', desc: 'Safe checkout powered by Cashfree Payments.' },
 ];
 
 export function WhyChooseUs() {

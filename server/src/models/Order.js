@@ -34,6 +34,9 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, default: 'UPI' },
     utrNumber: { type: String },
     utrEdited: { type: Boolean, default: false },
+    cashfreeOrderId: { type: String },
+    cashfreePaymentId: { type: String },
+    cashfreePaymentSessionId: { type: String },
     paymentStatus: {
       type: String,
       enum: ['PAYMENT_PENDING', 'PENDING_UTR', 'UTR_MISMATCH_RETRY', 'UTR_VERIFICATION_PENDING', 'UTR_VERIFIED', 'SUCCESSFUL', 'FAILED'],

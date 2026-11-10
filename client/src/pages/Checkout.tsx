@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Check, Lock, MapPin, ClipboardList, QrCode } from 'lucide-react';
+import { Check, Lock, MapPin, ClipboardList, QrCode, CreditCard } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { load } from '@cashfreepayments/cashfree-js';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
@@ -15,7 +16,9 @@ import type { Address } from '@/types';
 const steps = ['Shipping', 'Review', 'Payment'] as const;
 
 interface CreateOrderResponse {
-  order: { id: string; customOrderId: string; amount: number; createdAt: string };
+  order: { id: string; customOrderId: string; amount: number; createdAt: string; paymentMethod?: string };
+  paymentSessionId?: string;
+  cashfreeOrderId?: string;
 }
 
 export default function Checkout() {
@@ -30,6 +33,8 @@ export default function Checkout() {
   const [step, setStep] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [activeOrder, setActiveOrder] = useState<CreateOrderResponse['order'] | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'CASHFREE' | 'UPI'>('CASHFREE');
+  const [cashfreeSessionId, setCashfreeSessionId] = useState<string | null>(null);
   const [utrNumber, setUtrNumber] = useState('');
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   
@@ -116,6 +121,45 @@ export default function Checkout() {
   const addressValid =
     address.fullName && address.phone && address.line1 && address.city && address.postalCode;
 
+  const launchCashfreeCheckout = async (sessionId: string, orderId: string) => {
+    try {
+      const mode = (import.meta.env.VITE_CASHFREE_MODE || 'sandbox') as 'sandbox' | 'production';
+      const cashfree = await load({ mode });
+
+      await cashfree.checkout({
+        paymentSessionId: sessionId,
+        redirectTarget: '_modal',
+      }).then(async (result: any) => {
+        if (result.error) {
+          notify(result.error.message || 'Payment window closed or incomplete.', 'error');
+          setProcessing(false);
+        }
+        if (result.paymentDetails) {
+          setProcessing(true);
+          try {
+            const verifyRes = await api.post<{ success: boolean; verified: boolean }>(
+              `/orders/${orderId}/verify-cashfree`
+            );
+            clear();
+            if (verifyRes.verified || verifyRes.success) {
+              notify('Payment successful! Your order has been placed.');
+            } else {
+              notify('Payment completed and is being processed.', 'info');
+            }
+            navigate(`/checkout/success/${orderId}`);
+          } catch {
+            clear();
+            navigate(`/checkout/success/${orderId}`);
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Failed to open Cashfree Checkout:', err);
+      notify('Failed to initialize Cashfree checkout. Please try again.', 'error');
+      setProcessing(false);
+    }
+  };
+
   const placeOrder = async () => {
     setProcessing(true);
     try {
@@ -133,19 +177,30 @@ export default function Checkout() {
         }).catch(() => {});
       }
 
-      const { order } = await api.post<CreateOrderResponse>('/orders', {
+      const res = await api.post<CreateOrderResponse>('/orders', {
         items: items.map((i) => ({ productId: i.product._id, quantity: i.quantity })),
         shippingAddress: address,
         couponCode,
-        paymentMethod: 'UPI',
+        paymentMethod: selectedPaymentMethod,
       });
 
+      const { order, paymentSessionId } = res;
       trackEvent('order_placed', { orderId: order.customOrderId, amount: order.amount });
 
-      clear();
-      setActiveOrder(order);
-      setStep(2); // Move to Payment Screen
-      window.scrollTo(0, 0);
+      if (selectedPaymentMethod === 'CASHFREE') {
+        if (paymentSessionId) {
+          setActiveOrder(order);
+          setCashfreeSessionId(paymentSessionId);
+          await launchCashfreeCheckout(paymentSessionId, order.id);
+        } else {
+          throw new Error('Payment gateway session could not be created. Please try again.');
+        }
+      } else {
+        clear();
+        setActiveOrder(order);
+        setStep(2); // Move to Manual UPI Screen
+        window.scrollTo(0, 0);
+      }
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Checkout failed', 'error');
     } finally {
@@ -307,12 +362,87 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3">
+              {/* Payment Method Selection */}
+              <div className="space-y-3 pt-2">
+                <p className="text-sm font-semibold uppercase tracking-wider text-brown/70 dark:text-beige/70">
+                  Select Payment Method
+                </p>
+                <div className="grid gap-3">
+                  <label
+                    onClick={() => setSelectedPaymentMethod('CASHFREE')}
+                    className={cn(
+                      'flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition-all',
+                      selectedPaymentMethod === 'CASHFREE'
+                        ? 'border-gold bg-gold/5 ring-1 ring-gold dark:bg-gold/10'
+                        : 'border-brown/15 bg-white hover:border-brown/30 dark:bg-beige/5'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CASHFREE"
+                      checked={selectedPaymentMethod === 'CASHFREE'}
+                      onChange={() => setSelectedPaymentMethod('CASHFREE')}
+                      className="mt-1 text-gold focus:ring-gold"
+                    />
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CreditCard size={18} className="text-gold" />
+                        <span className="font-medium text-brown-dark dark:text-beige">
+                          Pay Online via Cashfree
+                        </span>
+                        <span className="rounded-full bg-forest/15 px-2 py-0.5 text-[10px] font-semibold text-forest">
+                          Instant Confirmation
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-brown/70 dark:text-beige/70">
+                        UPI (Google Pay, PhonePe, Paytm, CRED), Credit/Debit Cards, Net Banking & Wallets.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setSelectedPaymentMethod('UPI')}
+                    className={cn(
+                      'flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition-all',
+                      selectedPaymentMethod === 'UPI'
+                        ? 'border-gold bg-gold/5 ring-1 ring-gold dark:bg-gold/10'
+                        : 'border-brown/15 bg-white hover:border-brown/30 dark:bg-beige/5'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="UPI"
+                      checked={selectedPaymentMethod === 'UPI'}
+                      onChange={() => setSelectedPaymentMethod('UPI')}
+                      className="mt-1 text-gold focus:ring-gold"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <QrCode size={18} className="text-brown" />
+                        <span className="font-medium text-brown-dark dark:text-beige">
+                          Manual UPI Transfer
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-brown/70 dark:text-beige/70">
+                        Scan our UPI QR code and submit your 12-digit bank UTR reference number for manual verification.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
                 <Button variant="secondary" size="lg" onClick={() => setStep(0)}>
                   Back
                 </Button>
                 <Button size="lg" onClick={placeOrder} disabled={processing}>
-                  {processing ? 'Processing…' : `Confirm & Pay via UPI`}
+                  {processing
+                    ? 'Processing…'
+                    : selectedPaymentMethod === 'CASHFREE'
+                    ? `Pay with Cashfree (${formatPrice(total)})`
+                    : 'Confirm & Pay via UPI QR'}
                 </Button>
               </div>
             </div>
@@ -325,7 +455,45 @@ export default function Checkout() {
                 Complete Payment
               </h2>
 
-              {timeLeft === 0 ? (
+              {activeOrder.paymentMethod === 'CASHFREE' && cashfreeSessionId ? (
+                <div className="rounded-2xl bg-white p-8 text-center shadow-sm dark:bg-beige/5 space-y-4">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold">
+                    <CreditCard size={32} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-2xl font-medium text-brown-dark dark:text-beige">
+                      Complete Online Payment
+                    </h3>
+                    <p className="mt-2 text-sm text-brown/70 dark:text-beige/70">
+                      Order <span className="font-mono font-semibold">{activeOrder.customOrderId}</span> has been created.
+                      Click below to open the secure Cashfree payment portal.
+                    </p>
+                    <p className="mt-3 font-serif text-3xl font-medium text-forest">
+                      {formatPrice(activeOrder.amount)}
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col gap-3 max-w-sm mx-auto">
+                    <Button
+                      size="lg"
+                      fullWidth
+                      onClick={() => launchCashfreeCheckout(cashfreeSessionId, activeOrder.id)}
+                      disabled={processing}
+                    >
+                      {processing ? 'Opening Portal…' : 'Open Cashfree Payment Window'}
+                    </Button>
+                    <button
+                      type="button"
+                      className="text-xs text-brown/60 hover:text-brown underline"
+                      onClick={() => {
+                        setSelectedPaymentMethod('UPI');
+                        setActiveOrder((prev) => (prev ? { ...prev, paymentMethod: 'UPI' } : null));
+                      }}
+                    >
+                      Prefer manual UPI transfer instead? Click here
+                    </button>
+                  </div>
+                </div>
+              ) : timeLeft === 0 ? (
                 <div className="rounded-xl border border-red-500/20 bg-red-50 p-6 text-center text-red-900 dark:bg-red-500/10 dark:text-red-200">
                   <h3 className="font-serif text-xl font-medium">QR Code Expired</h3>
                   <p className="mt-2 text-sm opacity-90">

@@ -5,6 +5,7 @@ import { protect, adminOnly } from '../middleware/auth.js';
 import {
   createOrder,
   submitUtr,
+  verifyCashfreePayment,
   getMyOrders,
   getOrder,
   getAllOrders,
@@ -29,11 +30,13 @@ router.post(
   [
     body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
     body('shippingAddress').isObject().withMessage('Shipping address is required'),
-    body('paymentMethod').isIn(['UPI', 'COD']).withMessage('Invalid payment method')
+    body('paymentMethod').optional().isIn(['UPI', 'COD', 'CASHFREE', 'ONLINE']).withMessage('Invalid payment method')
   ],
   validate,
   createOrder
 );
+
+router.post('/:id/verify-cashfree', verifyCashfreePayment);
 
 router.post(
   '/:id/utr',

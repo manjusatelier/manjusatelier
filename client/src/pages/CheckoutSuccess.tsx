@@ -14,7 +14,14 @@ export default function CheckoutSuccess() {
   usePageMeta({ title: "Order Confirmed — Manju's Atelier" });
 
   useEffect(() => {
-    if (id) api.get<{ order: Order }>(`/orders/${id}`).then(({ order }) => setOrder(order)).catch(() => void 0);
+    if (id) {
+      // If returning from Cashfree redirect, verify payment status first
+      api.post(`/orders/${id}/verify-cashfree`)
+        .catch(() => void 0)
+        .finally(() => {
+          api.get<{ order: Order }>(`/orders/${id}`).then(({ order }) => setOrder(order)).catch(() => void 0);
+        });
+    }
   }, [id]);
 
   return (
