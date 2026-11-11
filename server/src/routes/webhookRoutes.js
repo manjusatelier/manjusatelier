@@ -13,20 +13,42 @@ const router = Router();
  * Configure this URL in Cashfree Merchant Dashboard -> Payment Gateway -> Developers -> Webhooks
  * URL: https://yourdomain.com/api/webhooks/cashfree
  */
+router.get('/cashfree', (req, res) => {
+  res.json({ success: true, message: 'Cashfree webhook endpoint active' });
+});
+
 router.post('/cashfree', express.raw({ type: 'application/json' }), async (req, res) => {
   const signature = req.headers['x-webhook-signature'];
   const timestamp = req.headers['x-webhook-timestamp'];
   const rawBody = req.body; // Buffer
 
-  if (!verifyCashfreeWebhook(signature, rawBody, timestamp)) {
-    return res.status(400).json({ success: false, message: 'Invalid Cashfree webhook signature' });
+  // Parse payload first to detect Cashfree dashboard test pings
+  let event = null;
+  try {
+    if (rawBody && rawBody.length > 0) {
+      event = JSON.parse(rawBody.toString('utf8'));
+    }
+  } catch {
+    // If not valid JSON and no signature, respond 200 for health checks
+    if (!signature) {
+      return res.status(200).json({ success: true, message: 'Health check received' });
+    }
+    return res.status(400).json({ success: false, message: 'Invalid payload' });
   }
 
-  let event;
-  try {
-    event = JSON.parse(rawBody.toString('utf8'));
-  } catch {
-    return res.status(400).json({ success: false, message: 'Invalid payload' });
+  // Handle Cashfree Dashboard test / verification pings
+  if (
+    !event ||
+    event.type === 'TEST_WEBHOOK' ||
+    event.event === 'TEST_WEBHOOK' ||
+    event.test === true ||
+    (!signature && !timestamp)
+  ) {
+    return res.status(200).json({ success: true, message: 'Test webhook acknowledged' });
+  }
+
+  if (!verifyCashfreeWebhook(signature, rawBody, timestamp)) {
+    return res.status(400).json({ success: false, message: 'Invalid Cashfree webhook signature' });
   }
 
   try {
