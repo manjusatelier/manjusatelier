@@ -70,10 +70,8 @@ orderSchema.pre('save', async function (next) {
         { $inc: { seq: 1 } },
         { new: true, upsert: true }
       );
-      // Start from 1000 if it's the first one, or adjust base as needed
-      // Include a short timestamp string to prevent collisions if DB is wiped but orders remain
-      const timePart = Date.now().toString(36).toUpperCase().slice(-4);
-      this.customOrderId = `ORD-${timePart}-${1000 + counter.seq}`;
+      // Clean, industry-standard order ID format: MA + sequential digits (e.g. MA10025)
+      this.customOrderId = `MA${10000 + counter.seq}`;
     } catch (error) {
       return next(error);
     }

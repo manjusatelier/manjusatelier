@@ -45,14 +45,14 @@ export default function OrderTracking() {
             Track Your Order
           </h1>
           <p className="mt-3 text-brown/70 dark:text-beige/70">
-            Enter your Order ID (e.g. ORD-1045) to see the real-time status of your handcrafted items.
+            Enter your Order ID (e.g. MA10024) to see the real-time status of your handcrafted items.
           </p>
         </div>
 
         <form onSubmit={handleTrack} className="mt-8 flex gap-3">
           <input
             type="text"
-            placeholder="Order ID"
+            placeholder="e.g. MA10024"
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
             className="input flex-1 font-mono uppercase"
