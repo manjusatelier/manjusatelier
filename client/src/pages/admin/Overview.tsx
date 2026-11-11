@@ -113,7 +113,7 @@ export default function Overview() {
                 <div key={o._id} className="flex items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-brown-dark dark:text-beige">
-                      #{o._id.slice(-8).toUpperCase()}
+                      {o.customOrderId || `#${o._id.slice(-8).toUpperCase()}`}
                     </p>
                     <p className="truncate text-xs text-brown/50 dark:text-beige/50">
                       {typeof o.user === 'object' && o.user

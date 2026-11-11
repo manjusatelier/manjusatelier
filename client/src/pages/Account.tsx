@@ -333,7 +333,7 @@ export default function Account() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brown/10 pb-3">
                   <div>
                     <p className="font-medium text-brown-dark dark:text-beige">
-                      #{order.customOrderId || order._id.slice(-8).toUpperCase()}
+                      {order.customOrderId || `#${order._id.slice(-8).toUpperCase()}`}
                     </p>
                     <p className="text-xs text-brown/50">
                       {formatDate(order.createdAt)}
