@@ -335,14 +335,14 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   } catch (err) {}
 
   let title = 'Order Status Updated';
-  let body = `Your order ${order.customOrderId} is now ${orderStatus}.`;
+  let body = `Your order #${order.customOrderId} is now ${orderStatus}.`;
   
   if (orderStatus === 'shipped') {
     title = 'Wow! Your Order Has Shipped!! 🚚✨';
-    body = `Great news! Your order ${order.customOrderId} is on its way to you.`;
+    body = `Great news! Your order #${order.customOrderId} is on its way to you.`;
   } else if (orderStatus === 'delivered') {
     title = "It's Here! Your package has arrived! 🎁";
-    body = `Your order ${order.customOrderId} has been delivered. Enjoy!`;
+    body = `Your order #${order.customOrderId} has been delivered. Enjoy!`;
   }
   
   // Send Notifications
@@ -579,7 +579,7 @@ export const updateReturnStatus = asyncHandler(async (req, res) => {
   await order.save();
 
   let title = `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`;
-  let body = `Your ${order.returnExchange.actionType} request for order ${order.customOrderId} has been ${status}.`;
+  let body = `Your ${order.returnExchange.actionType} request for order #${order.customOrderId} has been ${status}.`;
 
   await Notification.create({
     user: order.user,

@@ -7,7 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { api } from '@/lib/api';
-import { formatPrice, finalPrice, cn } from '@/lib/utils';
+import { formatPrice, finalPrice, cn, formatOrderId } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { trackEvent } from '@/lib/analytics';
@@ -467,7 +467,7 @@ export default function Checkout() {
                       Complete Online Payment
                     </h3>
                     <p className="mt-2 text-sm text-brown/70 dark:text-beige/70">
-                      Order <span className="font-mono font-semibold">{activeOrder.customOrderId}</span> has been created.
+                      Order <span className="font-mono font-semibold">{formatOrderId(activeOrder)}</span> has been created.
                       Click below to open the secure Cashfree payment portal.
                     </p>
                     <p className="mt-3 font-serif text-3xl font-medium text-forest">

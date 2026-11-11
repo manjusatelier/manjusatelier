@@ -35,6 +35,14 @@ export function formatDate(dateString: string | Date): string {
   });
 }
 
+/** Format an order object into a consistent human-readable ID with # prefix (e.g. #MA10024). */
+export function formatOrderId(order?: { customOrderId?: string; _id?: string; id?: string } | null): string {
+  if (!order) return '';
+  const raw = order.customOrderId || (order._id ? order._id.slice(-8).toUpperCase() : order.id ? order.id.slice(-8).toUpperCase() : '');
+  if (!raw) return '';
+  return raw.startsWith('#') ? raw : `#${raw}`;
+}
+
 /** Load an external script once (used for Razorpay checkout). */
 export function loadScript(src: string): Promise<boolean> {
   return new Promise((resolve) => {

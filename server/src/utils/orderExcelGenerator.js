@@ -21,6 +21,12 @@ function formatIST(date) {
   }
 }
 
+function formatOrderId(o) {
+  const raw = o?.customOrderId || String(o?._id || '');
+  if (!raw) return '-';
+  return raw.startsWith('#') ? raw : `#${raw}`;
+}
+
 /**
  * Generates an Excel workbook (.xlsx) for successful orders and payments.
  * Pipes directly to the express response stream.
@@ -107,7 +113,7 @@ export async function generateOrdersExcel(orders, meta = {}, res) {
     totalItemsCount += totalQty;
 
     const row = ordersSheet.addRow({
-      orderId: o.customOrderId || String(o._id),
+      orderId: formatOrderId(o),
       date: formatIST(o.createdAt),
       paymentStatus: o.paymentStatus || 'SUCCESSFUL',
       paymentMethod: o.paymentMethod || 'UPI',
@@ -211,7 +217,7 @@ export async function generateOrdersExcel(orders, meta = {}, res) {
     (o.items || []).forEach((item) => {
       itemRowIdx++;
       const itemRow = itemsSheet.addRow({
-        orderId: o.customOrderId || String(o._id),
+        orderId: formatOrderId(o),
         date: formatIST(o.createdAt),
         customerName: custName,
         productName: item.name || 'Handcrafted Craft Item',

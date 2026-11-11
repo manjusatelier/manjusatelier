@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Search, CheckCircle2, Clock, Package, Truck, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
+import { cn, formatOrderId } from '@/lib/utils';
 
 interface TrackData {
   customOrderId: string;
@@ -68,7 +68,7 @@ export default function OrderTracking() {
               <div>
                 <p className="text-sm text-brown/60 dark:text-beige/60">Order ID</p>
                 <p className="font-mono text-lg font-bold text-brown-dark dark:text-beige">
-                  {data.customOrderId}
+                  {formatOrderId(data)}
                 </p>
               </div>
               <div className="text-right">

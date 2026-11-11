@@ -5,7 +5,7 @@ import { CheckCircle2, Package } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Order } from '@/types';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatOrderId } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
 export default function CheckoutSuccess() {
@@ -45,7 +45,7 @@ export default function CheckoutSuccess() {
         <div className="card-surface mt-8 w-full max-w-md p-6 text-left">
           <div className="flex items-center justify-between border-b border-brown/10 pb-3">
             <span className="flex items-center gap-2 font-medium text-brown-dark dark:text-beige">
-              <Package size={18} /> Order {order.customOrderId || `#${order._id.slice(-8).toUpperCase()}`}
+              <Package size={18} /> Order {formatOrderId(order)}
             </span>
             <span className="rounded-full bg-forest/15 px-3 py-1 text-xs font-semibold text-forest">
               {order.paymentStatus === 'SUCCESSFUL' ? 'Paid' : order.paymentStatus.replace(/_/g, ' ')}

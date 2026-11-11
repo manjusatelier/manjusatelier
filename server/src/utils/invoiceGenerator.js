@@ -69,7 +69,7 @@ export function generateInvoice(order, res, inline = false) {
     .fillColor(lightText)
     .text('Invoice Number:', 50, 170)
     .fillColor(textColor)
-    .text(orderId, 140, 170)
+    .text(String(orderId).startsWith('#') ? String(orderId) : `#${orderId}`, 140, 170)
     .fillColor(lightText)
     .text('Invoice Date:', 50, 185)
     .fillColor(textColor)

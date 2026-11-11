@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IndianRupee, ShoppingBag, Package, Users, AlertTriangle, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
-import { formatPrice, formatDate } from '@/lib/utils';
+import { formatPrice, formatDate, formatOrderId } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { Order, Product } from '@/types';
 
@@ -113,7 +113,7 @@ export default function Overview() {
                 <div key={o._id} className="flex items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-brown-dark dark:text-beige">
-                      {o.customOrderId || `#${o._id.slice(-8).toUpperCase()}`}
+                      {formatOrderId(o)}
                     </p>
                     <p className="truncate text-xs text-brown/50 dark:text-beige/50">
                       {typeof o.user === 'object' && o.user

@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import type { Order, Address } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { cn, formatPrice, formatDate } from '@/lib/utils';
+import { cn, formatPrice, formatDate, formatOrderId } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -333,7 +333,7 @@ export default function Account() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brown/10 pb-3">
                   <div>
                     <p className="font-medium text-brown-dark dark:text-beige">
-                      {order.customOrderId || `#${order._id.slice(-8).toUpperCase()}`}
+                      {formatOrderId(order)}
                     </p>
                     <p className="text-xs text-brown/50">
                       {formatDate(order.createdAt)}

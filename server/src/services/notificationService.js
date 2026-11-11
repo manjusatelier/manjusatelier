@@ -168,13 +168,13 @@ class NotificationService {
     await Notification.create({
       user: order.user._id || order.user,
       title: 'UTR Rejected',
-      message: `The UTR for order ${order.customOrderId} was rejected. Please check and enter the correct UTR (you have one edit left).`,
+      message: `The UTR for order #${order.customOrderId} was rejected. Please check and enter the correct UTR (you have one edit left).`,
       link: `/account?tab=orders`,
     }).catch(e => console.error('In-app notification failed:', e));
 
     await this._sendPush(order.user._id || order.user, {
       title: 'Action Required: UTR Rejected',
-      body: `The UTR for order ${order.customOrderId} was rejected. Please update it.`,
+      body: `The UTR for order #${order.customOrderId} was rejected. Please update it.`,
       icon: '/pwa-192x192.png',
       url: '/account?tab=orders'
     });

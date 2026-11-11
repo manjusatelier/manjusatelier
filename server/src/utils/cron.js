@@ -30,11 +30,11 @@ export const initCronJobs = () => {
           await Notification.create({
             user: order.user,
             title: 'Order Expired',
-            message: `Your payment window for order ${order.customOrderId} expired. The order has been cancelled.`,
+            message: `Your payment window for order #${order.customOrderId} expired. The order has been cancelled.`,
             link: `/account?tab=orders`,
           });
           
-          console.log(`[CRON] Cancelled order ${order.customOrderId}`);
+          console.log(`[CRON] Cancelled order #${order.customOrderId}`);
         }
       }
     } catch (error) {

@@ -14,7 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { formatPrice, cn } from '@/lib/utils';
+import { formatPrice, cn, formatOrderId } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
@@ -181,7 +181,7 @@ export default function Orders() {
     const phone = o.shippingAddress.phone?.replace(/\D/g, '') || '';
     const countryCode = phone.length === 10 ? '91' : '';
     const number = `${countryCode}${phone}`;
-    const text = encodeURIComponent(`Hi ${customerName(o)}, this is Manju's Atelier! We are reaching out regarding your order #${o.customOrderId}.`);
+    const text = encodeURIComponent(`Hi ${customerName(o)}, this is Manju's Atelier! We are reaching out regarding your order ${formatOrderId(o)}.`);
     return `https://wa.me/${number}?text=${text}`;
   };
 
@@ -335,7 +335,7 @@ export default function Orders() {
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-brown-dark dark:text-beige">
-                    {o.customOrderId || `#${o._id.slice(-8).toUpperCase()}`}
+                    {formatOrderId(o)}
                   </p>
                   <p className="truncate text-xs text-brown/50 dark:text-beige/50">
                     {customerName(o)} · {new Date(o.createdAt).toLocaleString('en-IN')}

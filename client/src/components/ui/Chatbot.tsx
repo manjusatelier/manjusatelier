@@ -3,6 +3,7 @@ import { MessageCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
+import { formatOrderId } from '@/lib/utils';
 import type { Order } from '@/types';
 
 interface Message {
@@ -116,10 +117,10 @@ export const Chatbot = () => {
   };
 
   const suggestedQuestions: QuickReply[] = showOrderSelection ? [
-    ...userOrders.slice(0, ordersPage * 3).map(o => {
-      const id = o.customOrderId || o._id.slice(-8).toUpperCase();
-      return { text: `Track order #${id}`, type: 'chat' as const };
-    }),
+    ...userOrders.slice(0, ordersPage * 3).map(o => ({
+      text: `Track order ${formatOrderId(o)}`,
+      type: 'chat' as const,
+    })),
     ...(userOrders.length > ordersPage * 3 ? [{ text: "Load more orders...", type: 'action' as const, action: 'load_more' as const }] : []),
     { text: "Cancel", type: 'action' as const, action: 'cancel_orders' as const }
   ] : [
