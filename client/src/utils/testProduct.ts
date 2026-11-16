@@ -36,3 +36,21 @@ export function canUserAccessTestProduct(user?: User | null): boolean {
   const email = String(user.email || '').toLowerCase().trim();
   return ALLOWED_TEST_PRODUCT_EMAILS.includes(email);
 }
+
+/**
+ * Prioritizes test/dummy product to the very top (index 0) for authorized users.
+ */
+export function prioritizeTestProducts<T extends { name?: string; slug?: string; tags?: string[] }>(
+  products: T[],
+  user?: User | null
+): T[] {
+  if (!products || products.length <= 1) return products;
+  if (!canUserAccessTestProduct(user)) return products;
+
+  const testIndex = products.findIndex((p) => isTestDummyProduct(p));
+  if (testIndex <= 0) return products;
+
+  const testItem = products[testIndex];
+  const remaining = products.filter((_, idx) => idx !== testIndex);
+  return [testItem, ...remaining];
+}

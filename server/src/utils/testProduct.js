@@ -43,3 +43,29 @@ export const TEST_PRODUCT_QUERY_EXCLUSION = [
   { name: { $not: /test\s*\/?\s*dummy\s*product|dummy product/i } },
   { slug: { $not: /test-dummy-product|dummy-product/i } },
 ];
+
+/**
+ * Positive match query to identify test dummy products in MongoDB.
+ */
+export const TEST_PRODUCT_MATCH_QUERY = {
+  $or: [
+    { name: /test\s*\/?\s*dummy\s*product|dummy product/i },
+    { slug: /test-dummy-product|dummy-product/i },
+    { tags: { $in: ['dummy', 'test-dummy'] } },
+  ],
+};
+
+/**
+ * Prioritizes test/dummy product to index 0 of an array for authorized users.
+ */
+export function prioritizeTestProducts(products, user) {
+  if (!Array.isArray(products) || products.length <= 1) return products;
+  if (!canUserAccessTestProduct(user)) return products;
+
+  const testIndex = products.findIndex((p) => isTestDummyProduct(p));
+  if (testIndex <= 0) return products;
+
+  const testItem = products[testIndex];
+  const remaining = products.filter((_, idx) => idx !== testIndex);
+  return [testItem, ...remaining];
+}

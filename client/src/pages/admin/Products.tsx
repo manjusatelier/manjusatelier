@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { LazyImage } from '@/components/ui/LazyImage';
+import { useAuth } from '@/context/AuthContext';
+import { prioritizeTestProducts } from '@/utils/testProduct';
 import type { Product, Badge, Category, Paginated } from '@/types';
 
 const ALL_BADGES: Badge[] = ['New', 'Sale', 'Limited', 'Handmade'];
@@ -56,6 +58,7 @@ const emptyForm: FormState = {
 };
 
 export default function Products() {
+  const { user } = useAuth();
   const { categories } = useCategories();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +80,7 @@ export default function Products() {
       .get<Paginated<Product> & { success: boolean }>(`/products?${query.toString()}`)
       .then((res) => {
         if (pageNum === 1) {
-          setProducts(res.products);
+          setProducts(prioritizeTestProducts(res.products, user));
         } else {
           setProducts((prev) => [...prev, ...res.products]);
         }

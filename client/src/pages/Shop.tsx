@@ -8,6 +8,8 @@ import { usePageMeta } from '@/hooks/usePageMeta';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductCardSkeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/context/AuthContext';
+import { prioritizeTestProducts, isTestDummyProduct, canUserAccessTestProduct } from '@/utils/testProduct';
 import { cn, formatPrice, finalPrice, categoryName } from '@/lib/utils';
 import { Rating } from '@/components/ui/Rating';
 import type { Product } from '@/types';
@@ -63,7 +65,11 @@ export default function Shop() {
     [params, page]
   );
 
+  const { user } = useAuth();
   const { data, loading, loadingMore } = useProducts(query);
+  const displayedProducts = useMemo(() => {
+    return prioritizeTestProducts(data?.products || [], user);
+  }, [data?.products, user]);
   const observerTarget = React.useRef<HTMLDivElement>(null);
 
   // Infinite Scroll Observer
@@ -297,16 +303,16 @@ export default function Shop() {
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
-          ) : data && data.products.length > 0 ? (
+          ) : displayedProducts.length > 0 ? (
             view === 'grid' ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
-                {data.products.map((p: Product) => (
+                {displayedProducts.map((p: Product) => (
                   <ProductCard key={p._id} product={p} />
                 ))}
               </div>
             ) : (
               <div className="space-y-4">
-                {data.products.map((p: Product) => (
+                {displayedProducts.map((p: Product) => (
                   <ListRow key={p._id} product={p} />
                 ))}
               </div>
@@ -417,6 +423,11 @@ function Chip({
 }
 
 function ListRow({ product }: { product: Product }) {
+  const { user } = useAuth();
+  if (isTestDummyProduct(product) && !canUserAccessTestProduct(user)) {
+    return null;
+  }
+
   return (
     <a
       href={`/product/${product.slug}`}

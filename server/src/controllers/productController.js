@@ -7,6 +7,8 @@ import {
   isTestDummyProduct,
   canUserAccessTestProduct,
   TEST_PRODUCT_QUERY_EXCLUSION,
+  TEST_PRODUCT_MATCH_QUERY,
+  prioritizeTestProducts,
 } from '../utils/testProduct.js';
 
 /**
@@ -80,19 +82,81 @@ export const getProducts = asyncHandler(async (req, res) => {
   const facetFilter = { ...filter };
   delete facetFilter.category; // Get counts across all categories matching other filters
 
-  const [products, total, categoryFacets] = await Promise.all([
-    Product.find(filter)
-      .populate('category', 'name slug')
-      .sort(sortMap[sort] || sortMap.newest)
-      .skip(skip)
-      .limit(limitNum),
-    Product.countDocuments(filter),
-    Product.aggregate([
-      { $match: facetFilter },
-      { $unwind: '$category' },
-      { $group: { _id: '$category', count: { $sum: 1 } } }
-    ])
-  ]);
+  let products;
+  let total;
+  let categoryFacets;
+
+  if (canSeeTest && !ids) {
+    const matchesSearch = !search || /test|dummy/i.test(search) || isTestDummyProduct({ name: search });
+    let testProduct = null;
+    if (matchesSearch) {
+      testProduct = await Product.findOne(TEST_PRODUCT_MATCH_QUERY).populate('category', 'name slug');
+    }
+
+    if (testProduct) {
+      const regularFilter = {
+        ...filter,
+        $and: [...(filter.$and || []), ...TEST_PRODUCT_QUERY_EXCLUSION],
+      };
+
+      const regularSkip = pageNum === 1 ? 0 : (pageNum - 1) * limitNum - 1;
+      const regularLimit = pageNum === 1 ? limitNum - 1 : limitNum;
+
+      const [regularProducts, regularTotal, facetsResult] = await Promise.all([
+        Product.find(regularFilter)
+          .populate('category', 'name slug')
+          .sort(sortMap[sort] || sortMap.newest)
+          .skip(regularSkip)
+          .limit(regularLimit),
+        Product.countDocuments(regularFilter),
+        Product.aggregate([
+          { $match: facetFilter },
+          { $unwind: '$category' },
+          { $group: { _id: '$category', count: { $sum: 1 } } }
+        ])
+      ]);
+
+      categoryFacets = facetsResult;
+      total = regularTotal + 1;
+      products = pageNum === 1 ? [testProduct, ...regularProducts] : regularProducts;
+    } else {
+      const skip = (pageNum - 1) * limitNum;
+      const [regularProducts, totalCount, facetsResult] = await Promise.all([
+        Product.find(filter)
+          .populate('category', 'name slug')
+          .sort(sortMap[sort] || sortMap.newest)
+          .skip(skip)
+          .limit(limitNum),
+        Product.countDocuments(filter),
+        Product.aggregate([
+          { $match: facetFilter },
+          { $unwind: '$category' },
+          { $group: { _id: '$category', count: { $sum: 1 } } }
+        ])
+      ]);
+      products = prioritizeTestProducts(regularProducts, req.user);
+      total = totalCount;
+      categoryFacets = facetsResult;
+    }
+  } else {
+    const skip = (pageNum - 1) * limitNum;
+    const [regularProducts, totalCount, facetsResult] = await Promise.all([
+      Product.find(filter)
+        .populate('category', 'name slug')
+        .sort(sortMap[sort] || sortMap.newest)
+        .skip(skip)
+        .limit(limitNum),
+      Product.countDocuments(filter),
+      Product.aggregate([
+        { $match: facetFilter },
+        { $unwind: '$category' },
+        { $group: { _id: '$category', count: { $sum: 1 } } }
+      ])
+    ]);
+    products = canSeeTest ? prioritizeTestProducts(regularProducts, req.user) : regularProducts;
+    total = totalCount;
+    categoryFacets = facetsResult;
+  }
 
   const facets = {
     categoryCounts: categoryFacets.reduce((acc, curr) => {
@@ -125,9 +189,17 @@ export const getFeatured = asyncHandler(async (req, res) => {
     query.$and = [...TEST_PRODUCT_QUERY_EXCLUSION];
   }
 
-  const products = await Product.find(query)
+  let products = await Product.find(query)
     .populate('category', 'name slug')
     .limit(8);
+
+  if (canSeeTest) {
+    const testProduct = await Product.findOne(TEST_PRODUCT_MATCH_QUERY).populate('category', 'name slug');
+    if (testProduct) {
+      const filtered = products.filter((p) => p._id.toString() !== testProduct._id.toString());
+      products = [testProduct, ...filtered.slice(0, 7)];
+    }
+  }
     
   const responseData = { success: true, products };
   await setCache(cacheKey, responseData, 3600);
