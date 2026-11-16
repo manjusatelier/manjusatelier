@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ChevronDown,
   Package,
@@ -77,12 +78,31 @@ const payColor: Record<string, string> = {
 };
 
 export default function Orders() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(searchParams.get('status') || '');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const { notify } = useToast();
+
+  useEffect(() => {
+    const urlStatus = searchParams.get('status') || '';
+    if (urlStatus !== filter) {
+      setFilter(urlStatus);
+    }
+  }, [searchParams]);
+
+  const handleFilterChange = (newStatus: string) => {
+    setFilter(newStatus);
+    const next = new URLSearchParams(searchParams);
+    if (newStatus) {
+      next.set('status', newStatus);
+    } else {
+      next.delete('status');
+    }
+    setSearchParams(next, { replace: true });
+  };
 
   const load = () => {
     setLoading(true);
@@ -288,10 +308,11 @@ export default function Orders() {
         <div className="flex flex-wrap items-center gap-3">
           <select
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) => handleFilterChange(e.target.value)}
             className="rounded-full border border-brown/15 bg-white px-4 py-2 text-sm outline-none focus:border-brown dark:bg-[#26201a]"
           >
             <option value="">All statuses</option>
+            <option value="aging" className="text-amber-600 font-semibold">⚠️ Aging / Delayed (&gt;24h)</option>
             {statuses.map((s) => (
               <option key={s} value={s} className="capitalize">
                 {s}
@@ -347,6 +368,16 @@ export default function Orders() {
                 <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold capitalize', statusColor[o.orderStatus])}>
                   {o.orderStatus}
                 </span>
+                {['confirmed', 'processing'].includes(o.orderStatus) &&
+                  Date.now() - new Date(o.createdAt).getTime() > 24 * 60 * 60 * 1000 && (
+                    <span
+                      className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1 animate-pulse"
+                      title="Confirmed for > 24 hours without shipping"
+                    >
+                      <span>⚠️</span>
+                      <span className="hidden sm:inline">Aging (&gt;24h)</span>
+                    </span>
+                  )}
                 {o.returnExchange && o.returnExchange.status === 'pending' && (
                   <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700 capitalize hidden sm:inline">
                     {o.returnExchange.actionType} Req

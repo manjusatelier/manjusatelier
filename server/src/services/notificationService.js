@@ -2,7 +2,14 @@ import mongoose from 'mongoose';
 import Notification from '../models/Notification.js';
 import { getSocket } from '../socket.js';
 import { sendEmail } from '../utils/sendEmail.js';
-import { getOrderReceivedTemplate, getOrderShippedTemplate, getOrderDeliveredTemplate, getOrderCancelledTemplate, getPaymentVerifiedTemplate } from '../utils/emailTemplates.js';
+import {
+  getOrderReceivedTemplate,
+  getOrderShippedTemplate,
+  getOrderDeliveredTemplate,
+  getOrderCancelledTemplate,
+  getPaymentVerifiedTemplate,
+  getAdminNewOrderAlertTemplate,
+} from '../utils/emailTemplates.js';
 
 /**
  * Service to handle all order-related notifications (Email, In-App, Push, Socket)
@@ -54,7 +61,13 @@ class NotificationService {
     });
 
     try {
-      getSocket().to('admins').emit('order_update', { type: 'NEW_ORDER', orderId: order._id });
+      getSocket().to('admins').emit('order_update', {
+        type: 'NEW_ORDER',
+        orderId: order._id,
+        customOrderId: order.customOrderId,
+        amount: order.total,
+        customerName: order.shippingAddress?.fullName || 'Customer',
+      });
     } catch (err) {
       console.error('Socket admin notification failed:', err);
     }
@@ -159,6 +172,27 @@ class NotificationService {
       });
     } catch (e) {
       console.error('Socket user notification failed:', e);
+    }
+
+    // Send instant alert email to Admin
+    const adminAlertEmail = process.env.ADMIN_ALERT_EMAIL || process.env.EMAIL_FROM || 'help@manjusatelier.in';
+    const customerName = order.shippingAddress?.fullName || 'Customer';
+    await sendEmail({
+      email: adminAlertEmail,
+      subject: `🔔 [NEW ORDER #${order.customOrderId}] ₹${order.total} - ${customerName}`,
+      html: getAdminNewOrderAlertTemplate(order),
+    }).catch((e) => console.error('Admin order alert email failed:', e));
+
+    try {
+      getSocket().to('admins').emit('order_update', {
+        type: 'PAYMENT_VERIFIED',
+        orderId: order._id,
+        customOrderId: order.customOrderId,
+        amount: order.total,
+        customerName,
+      });
+    } catch (err) {
+      console.error('Socket admin notification failed:', err);
     }
   }
   /**

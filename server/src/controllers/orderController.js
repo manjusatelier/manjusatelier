@@ -293,7 +293,13 @@ export const getPendingOrderCount = asyncHandler(async (req, res) => {
 export const getAllOrders = asyncHandler(async (req, res) => {
   const { status, paymentStatus, page = 1, limit = 20 } = req.query;
   const filter = {};
-  if (status) filter.orderStatus = status;
+  if (status === 'aging') {
+    filter.paymentStatus = 'SUCCESSFUL';
+    filter.orderStatus = { $in: ['confirmed', 'processing'] };
+    filter.createdAt = { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+  } else if (status) {
+    filter.orderStatus = status;
+  }
   if (paymentStatus) filter.paymentStatus = paymentStatus;
 
   const pageNum = Math.max(1, Number(page));

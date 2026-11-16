@@ -3,7 +3,7 @@ import Order from '../models/Order.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { sendEmail } from './sendEmail.js';
-import { getAbandonedCartTemplate } from './emailTemplates.js';
+import { getAbandonedCartTemplate, getAdminAgingOrdersAlertTemplate } from './emailTemplates.js';
 
 let tasks = [];
 
@@ -80,7 +80,39 @@ export const initCronJobs = () => {
     }
   });
 
-  tasks.push(t1, t2);
+  // Run every day at 10:00 AM for Aging / Overdue orders (> 24 hours in confirmed/processing)
+  const t3 = cron.schedule('0 10 * * *', async () => {
+    try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const overdueOrders = await Order.find({
+        paymentStatus: 'SUCCESSFUL',
+        orderStatus: { $in: ['confirmed', 'processing'] },
+        createdAt: { $lt: twentyFourHoursAgo },
+      }).populate('user', 'name email');
+
+      if (overdueOrders.length > 0) {
+        console.log(`[CRON] Found ${overdueOrders.length} aging orders (>24h). Sending admin alert...`);
+        const adminAlertEmail = process.env.ADMIN_ALERT_EMAIL || process.env.EMAIL_FROM || 'help@manjusatelier.in';
+        await sendEmail({
+          email: adminAlertEmail,
+          subject: `⚠️ [ACTION REQUIRED] ${overdueOrders.length} order(s) pending dispatch (> 24 hrs)`,
+          html: getAdminAgingOrdersAlertTemplate(overdueOrders),
+        }).catch((e) => console.error('[CRON] Failed to send aging orders email:', e));
+
+        try {
+          const { getSocket } = await import('../socket.js');
+          getSocket().to('admins').emit('order_update', {
+            type: 'AGING_ORDERS_ALERT',
+            count: overdueOrders.length,
+          });
+        } catch (e) {}
+      }
+    } catch (error) {
+      console.error('[CRON] Error checking aging orders:', error);
+    }
+  });
+
+  tasks.push(t1, t2, t3);
 
   console.log('[CRON] Jobs initialized.');
 };
