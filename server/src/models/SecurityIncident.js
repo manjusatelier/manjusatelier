@@ -55,3 +55,4 @@ const securityIncidentSchema = new mongoose.Schema(
 securityIncidentSchema.index({ createdAt: -1 });
 
 export default mongoose.model('SecurityIncident', securityIncidentSchema);
+

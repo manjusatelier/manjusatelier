@@ -43,14 +43,23 @@ The platform is actively live and serving customers at **[www.manjusatelier.in](
 - **Automated Discounts & Coupons:** Real-time coupon validation engine with minimum spend rules and percentage/flat discounts.
 
 #### 📦 Order Lifecycle & Invoicing
+- **Simplified Sequential Order IDs:** Clean, memorable `#MA10024` identifier format synchronized across all customer order cards, invoices, tracking links, and admin dashboards.
 - **Full Order Lifecycle:** Status transitions from `processing` → `confirmed` → `shipped` → `delivered` → `cancelled`.
 - **Dynamic PDF Invoices:** Instant PDF invoice generation with branding and order summaries.
 - **Returns & Exchanges:** Customer self-service return/exchange requests with admin approval workflows.
 
+#### 🛡️ AI Content Moderation & Security
+- **Zero-Tolerance AI Vision Review Moderation:** Multi-modal inspection (OpenRouter AI Vision / Google Gemini) intercepts customer review images before publication.
+- **Instant Asset Shredding:** Automatically purges flagged obscene, violent, or illicit assets from Cloudinary immediately upon detection.
+- **Incident Tracking & Geo-IP:** Captures violator IP addresses, resolves physical geolocation, stores forensics in `SecurityIncident` logs, and dispatches instant security alert emails to administrators.
+
 #### 🛠️ Comprehensive Admin Suite (`/admin`)
 - **Dashboard & Analytics:** Real-time revenue, order volume, customer counts, average order value (AOV), and conversion funnels.
+- **Real-Time Order Audio & Push Alerts:** Web Audio chime and desktop notifications on incoming orders, paired with immediate email alerts.
+- **24-Hour Aging Order Monitor:** Automated daily cron monitors orders in `confirmed` status for >24 hours with dedicated filtering and pulsating warning badges.
 - **Product Management:** Full CRUD operations with multi-image Cloudinary uploads, variant configuration, stock monitoring, and low-stock alerts.
 - **Order Management:** Live order feeds with Socket.io push alerts, manual UTR verification/rejection, status updates, customer contact shortcuts, and Excel exports.
+- **Security & Incident Log:** Dedicated review moderation tab tracking flagged attempts with forensic IP and geolocation data.
 - **Marketing & Social Hub:** Instant promotional announcement composer, review management, and offline stall QR standee generator.
 - **Store Settings:** Configurable shipping thresholds, free delivery rules, and platform metadata.
 
@@ -157,6 +166,12 @@ CLOUDINARY_API_SECRET=your_api_secret
 RESEND_API_KEY=your_resend_api_key
 EMAIL_FROM=help@manjusatelier.in
 FROM_NAME=Manju's Atelier
+ADMIN_NOTIFICATION_EMAIL=manjusatelier@gmail.com
+
+# AI Vision & Text Moderation (OpenRouter / Gemini)
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_VISION_MODEL=google/gemini-2.0-flash-001
+GEMINI_API_KEY=your_gemini_api_key
 
 # Cashfree Payments Gateway
 CASHFREE_APP_ID=your_cashfree_app_id
