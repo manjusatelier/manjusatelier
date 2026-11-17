@@ -17,6 +17,8 @@ import {
   Package,
   Info,
   Star,
+  Camera,
+  X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Product, ProductVariant, Review } from '@/types';
@@ -932,18 +934,46 @@ function ReviewsTab({
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [visibleCount, setVisibleCount] = useState(3);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { notify } = useToast();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        notify('Image size must be less than 5MB', 'error');
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { review } = await api.post<{ review: Review }>(
-        `/products/${product._id}/reviews`,
-        { rating, comment }
-      );
-      onAdded(review);
+      let res: { review: Review };
+      if (imageFile) {
+        const payload = new FormData();
+        payload.append('rating', String(rating));
+        payload.append('comment', comment);
+        payload.append('image', imageFile);
+        res = await api.upload<{ review: Review }>(`/products/${product._id}/reviews`, payload);
+      } else {
+        res = await api.post<{ review: Review }>(`/products/${product._id}/reviews`, { rating, comment });
+      }
+
+      onAdded(res.review);
       setComment('');
+      removeImage();
       notify('Thank you for your review!');
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Could not submit review', 'error');
@@ -1008,6 +1038,39 @@ function ReviewsTab({
                   rows={4}
                   className="w-full max-w-full rounded-2xl border border-brown/15 bg-white p-3.5 text-sm outline-none focus:border-brown dark:border-beige/15 dark:bg-[#26201a] dark:text-beige"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-brown-dark/70 dark:text-beige/70">
+                  Add a photo (optional)
+                </label>
+                {imagePreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Review preview"
+                      className="h-20 w-20 rounded-xl object-cover border border-brown/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 p-1 text-white shadow-md hover:bg-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-dashed border-brown/30 bg-brown/5 px-3 py-2 text-xs font-medium text-brown-dark hover:bg-brown/10 dark:border-beige/30 dark:bg-beige/5 dark:text-beige">
+                    <Camera size={16} />
+                    <span>Attach photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
@@ -1078,6 +1141,40 @@ function ReviewsTab({
               rows={3}
               className="w-full max-w-full rounded-xl border border-brown/15 bg-white p-3 text-sm outline-none focus:border-brown dark:bg-[#26201a] dark:border-beige/15 dark:text-beige"
             />
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-brown-dark/70 dark:text-beige/70">
+                Add a photo (optional)
+              </label>
+              {imagePreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Review preview"
+                    className="h-16 w-16 rounded-xl object-cover border border-brown/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 p-1 text-white shadow-md hover:bg-red-600"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-dashed border-brown/30 bg-brown/5 px-3 py-2 text-xs font-medium text-brown-dark hover:bg-brown/10 dark:border-beige/30 dark:bg-beige/5 dark:text-beige">
+                  <Camera size={16} />
+                  <span>Attach photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
             <Button type="submit" disabled={submitting} size="sm">
               {submitting ? 'Submitting…' : 'Submit review'}
             </Button>

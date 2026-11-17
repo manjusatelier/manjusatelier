@@ -260,3 +260,84 @@ export const getAdminAgingOrdersAlertTemplate = (orders) => {
     </div>
   `;
 };
+
+export const getSecurityIncidentAlertEmail = (incident) => {
+  const clientUrl = process.env.CLIENT_URL || 'https://manjusatelier.in';
+  const loc = incident.location || {};
+  const locationString = [loc.city, loc.region, loc.country].filter(Boolean).join(', ') || 'Unknown Location';
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 2px solid #c0392b; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(192,57,43,0.15);">
+      <div style="background-color: #c0392b; padding: 22px; text-align: center; color: #ffffff;">
+        <h1 style="margin: 0; font-size: 21px; letter-spacing: 0.5px;">🚨 URGENT: Obscene / Prohibited Content Blocked</h1>
+        <p style="margin: 6px 0 0; font-size: 13.5px; opacity: 0.95;">Zero-Tolerance Security Interception on Review Submission</p>
+      </div>
+
+      <div style="padding: 26px; background-color: #ffffff;">
+        <div style="background-color: #fdf2f2; border-left: 4px solid #c0392b; padding: 14px; margin-bottom: 22px; border-radius: 4px;">
+          <strong style="color: #c0392b; font-size: 14px;">Review Intercepted & Blocked:</strong>
+          <p style="margin: 4px 0 0; color: #555555; font-size: 13px; line-height: 1.5;">
+            An abusive or obscene review image was <strong>detected and immediately blocked</strong> by the OpenRouter AI moderation system. The review was <strong>NOT</strong> posted to the website, any hosted temporary image was shredded, and the incident has been recorded in the security database.
+          </p>
+        </div>
+
+        <h3 style="color: #2c3e50; font-size: 15px; margin: 0 0 10px; border-bottom: 2px solid #f0eae1; padding-bottom: 6px;">
+          📍 User & Network Footprint
+        </h3>
+        <table style="width: 100%; font-size: 13.5px; line-height: 1.8; color: #333333; margin-bottom: 20px;">
+          <tr>
+            <td style="width: 32%; color: #7f8c8d; font-weight: bold;">User:</td>
+            <td>${incident.userName} (${incident.userEmail || 'Guest'})</td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">IP Address:</td>
+            <td><code style="background-color: #f1f2f6; padding: 3px 8px; border-radius: 4px; font-weight: bold; color: #c0392b;">${incident.ipAddress}</code></td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">Location:</td>
+            <td><strong>${locationString}</strong> ${loc.zip ? `(PIN: ${loc.zip})` : ''}</td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">Network / ISP:</td>
+            <td>${loc.isp || 'Unknown'}</td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">Target Product:</td>
+            <td>${incident.productName || 'N/A'} (ID: ${incident.product || 'N/A'})</td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">Review Text:</td>
+            <td style="font-style: italic; color: #555555;">"${incident.reviewComment || '[No text provided]'}"</td>
+          </tr>
+          <tr>
+            <td style="color: #7f8c8d; font-weight: bold;">Timestamp:</td>
+            <td>${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</td>
+          </tr>
+        </table>
+
+        <h3 style="color: #2c3e50; font-size: 15px; margin: 0 0 10px; border-bottom: 2px solid #f0eae1; padding-bottom: 6px;">
+          🤖 AI Vision Analysis
+        </h3>
+        <div style="background-color: #fcf9f2; border: 1px solid #f39c12; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 14px; color: #d35400;"><strong>Verdict:</strong> ${incident.aiVerdict}</p>
+          <p style="margin: 6px 0 0; font-size: 13px; color: #555555;"><strong>Reason:</strong> ${incident.aiReason}</p>
+          <p style="margin: 6px 0 0; font-size: 13px; color: #555555;"><strong>Flagged Categories:</strong> ${(incident.aiCategories || []).join(', ') || 'prohibited_content'}</p>
+          <p style="margin: 6px 0 0; font-size: 12px; color: #95a5a6;">Model: ${incident.aiModelUsed || 'OpenRouter Vision'}</p>
+        </div>
+
+        ${incident.flaggedImageUrl ? `
+        <h3 style="color: #2c3e50; font-size: 15px; margin: 0 0 8px; border-bottom: 2px solid #f0eae1; padding-bottom: 6px;">
+          🖼️ Image Reference (Quarantined)
+        </h3>
+        <p style="font-size: 12px; color: #888888; margin-bottom: 12px; word-break: break-all;">
+          ${incident.flaggedImageUrl}
+        </p>
+        ` : ''}
+
+        <div style="text-align: center; margin-top: 24px; border-top: 1px solid #eee; padding-top: 18px;">
+          <a href="${clientUrl}/admin/reviews" style="display: inline-block; background-color: #2c3e50; color: #ffffff; text-decoration: none; padding: 11px 24px; border-radius: 50px; font-weight: bold; font-size: 13.5px;">View Moderation Log in Admin</a>
+        </div>
+      </div>
+    </div>
+  `;
+};

@@ -82,7 +82,7 @@ export default function Contact() {
               className="h-full w-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=77.55%2C12.95%2C77.65%2C13.02&layer=mapnik"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=77.38%2C28.62%2C77.48%2C28.70&layer=mapnik"
             />
           </div>
         </Reveal>

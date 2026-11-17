@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validate.js';
 import { protect, adminOnly, optionalAuth } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
 import {
   getProducts,
   getFeatured,
@@ -27,6 +28,7 @@ router.get('/:productId/reviews', getProductReviews);
 router.post(
   '/:productId/reviews',
   protect,
+  upload.single('image'),
   [
     body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
     body('comment').optional().isLength({ max: 500 }).withMessage('Comment too long'),
