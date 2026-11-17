@@ -90,6 +90,8 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/bulk-orders" element={<BulkOrders />} />
             <Route path="/offline-review" element={<OfflineReview />} />
+            <Route path="/reviews" element={<OfflineReview />} />
+            <Route path="/review" element={<OfflineReview />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkout/success/:id" element={<CheckoutSuccess />} />

@@ -73,11 +73,17 @@ export const getProducts = asyncHandler(async (req, res) => {
     priceLow: { price: 1 },
     priceHigh: { price: -1 },
     rating: { rating: -1 },
+    name: { name: 1 },
+    nameAsc: { name: 1 },
+    nameDesc: { name: -1 },
   };
 
+  const isAll = req.query.all === 'true' || req.query.limit === 'all';
   const pageNum = Math.max(1, Number(page));
-  const limitNum = Math.min(48, Math.max(1, Number(limit)));
-  const skip = (pageNum - 1) * limitNum;
+  // If requesting all products (e.g. for review selector / offline review dropdown), allow up to 1000
+  const maxLimit = isAll ? 1000 : 500;
+  const limitNum = isAll ? 1000 : Math.min(maxLimit, Math.max(1, Number(limit) || 12));
+  const skip = isAll ? 0 : (pageNum - 1) * limitNum;
 
   const facetFilter = { ...filter };
   delete facetFilter.category; // Get counts across all categories matching other filters
@@ -99,8 +105,8 @@ export const getProducts = asyncHandler(async (req, res) => {
         $and: [...(filter.$and || []), ...TEST_PRODUCT_QUERY_EXCLUSION],
       };
 
-      const regularSkip = pageNum === 1 ? 0 : (pageNum - 1) * limitNum - 1;
-      const regularLimit = pageNum === 1 ? limitNum - 1 : limitNum;
+      const regularSkip = (isAll || pageNum === 1) ? 0 : (pageNum - 1) * limitNum - 1;
+      const regularLimit = isAll ? limitNum - 1 : (pageNum === 1 ? limitNum - 1 : limitNum);
 
       const [regularProducts, regularTotal, facetsResult] = await Promise.all([
         Product.find(regularFilter)
@@ -118,7 +124,7 @@ export const getProducts = asyncHandler(async (req, res) => {
 
       categoryFacets = facetsResult;
       total = regularTotal + 1;
-      products = pageNum === 1 ? [testProduct, ...regularProducts] : regularProducts;
+      products = (isAll || pageNum === 1) ? [testProduct, ...regularProducts] : regularProducts;
     } else {
       const skip = (pageNum - 1) * limitNum;
       const [regularProducts, totalCount, facetsResult] = await Promise.all([
@@ -139,7 +145,7 @@ export const getProducts = asyncHandler(async (req, res) => {
       categoryFacets = facetsResult;
     }
   } else {
-    const skip = (pageNum - 1) * limitNum;
+    const skip = isAll ? 0 : (pageNum - 1) * limitNum;
     const [regularProducts, totalCount, facetsResult] = await Promise.all([
       Product.find(filter)
         .populate('category', 'name slug')
@@ -169,8 +175,8 @@ export const getProducts = asyncHandler(async (req, res) => {
     success: true,
     products,
     total,
-    page: pageNum,
-    pages: Math.ceil(total / limitNum),
+    page: isAll ? 1 : pageNum,
+    pages: isAll ? 1 : Math.ceil(total / limitNum),
     facets,
   };
 
